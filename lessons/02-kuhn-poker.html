@@ -460,6 +460,7 @@
             <li><a href="#implementation">Implementation Walkthrough</a></li>
             <li><a href="#nash">The Nash Equilibrium of Kuhn Poker</a></li>
             <li><a href="#poker-concepts">Poker Concepts in Miniature</a></li>
+            <li><a href="#demo-play">Interactive Demo: Play Kuhn Poker</a></li>
             <li><a href="#demo-cfr">Interactive Demo: CFR Training</a></li>
             <li><a href="#demo-equilibrium">Interactive Demo: Equilibrium Explorer</a></li>
             <li><a href="#bridge">Bridge to Larger Games</a></li>
@@ -585,6 +586,84 @@
             <td>4 (2+2)</td>
         </tr>
     </table>
+
+    <p>
+        Here's the full game tree visualized. Player 1 nodes are blue, Player 2 nodes are purple,
+        and terminal nodes are green:
+    </p>
+
+    <div style="overflow-x: auto; margin: 24px 0;">
+    <svg viewBox="0 0 700 380" style="width: 100%; max-width: 700px; display: block; margin: 0 auto;" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Kuhn Poker game tree showing all possible action sequences">
+        <!-- Edges -->
+        <line x1="350" y1="40" x2="175" y2="120" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="350" y1="40" x2="525" y2="120" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="175" y1="120" x2="80" y2="210" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="175" y1="120" x2="270" y2="210" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="525" y1="120" x2="440" y2="210" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="525" y1="120" x2="620" y2="210" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="270" y1="210" x2="210" y2="310" stroke="#2a2f3e" stroke-width="2"/>
+        <line x1="270" y1="210" x2="340" y2="310" stroke="#2a2f3e" stroke-width="2"/>
+
+        <!-- Edge labels -->
+        <text x="245" y="75" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" font-weight="bold">Check</text>
+        <text x="440" y="75" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" font-weight="bold">Bet</text>
+        <text x="95" y="163" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" font-weight="bold">Check</text>
+        <text x="225" y="163" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" font-weight="bold">Bet</text>
+        <text x="453" y="163" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" font-weight="bold">Fold</text>
+        <text x="575" y="163" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" font-weight="bold">Call</text>
+        <text x="170" y="265" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" font-weight="bold">Fold</text>
+        <text x="310" y="265" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" font-weight="bold">Call</text>
+
+        <!-- Root: P1 decision -->
+        <rect x="306" y="18" width="88" height="36" rx="8" fill="#181b24" stroke="#6c9cfc" stroke-width="2"/>
+        <text x="350" y="42" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" text-anchor="middle" font-weight="bold">P1</text>
+
+        <!-- P2 after check -->
+        <rect x="131" y="100" width="88" height="36" rx="8" fill="#181b24" stroke="#a78bfa" stroke-width="2"/>
+        <text x="175" y="124" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" text-anchor="middle" font-weight="bold">P2</text>
+
+        <!-- P2 after bet -->
+        <rect x="481" y="100" width="88" height="36" rx="8" fill="#181b24" stroke="#a78bfa" stroke-width="2"/>
+        <text x="525" y="124" fill="#a78bfa" font-family="Courier New, monospace" font-size="13" text-anchor="middle" font-weight="bold">P2</text>
+
+        <!-- Terminal: cc (showdown) -->
+        <rect x="24" y="192" width="112" height="44" rx="8" fill="#181b24" stroke="#4ade80" stroke-width="2"/>
+        <text x="80" y="212" fill="#4ade80" font-family="Courier New, monospace" font-size="12" text-anchor="middle" font-weight="bold">cc</text>
+        <text x="80" y="228" fill="#8a8fa8" font-family="sans-serif" font-size="10" text-anchor="middle">Showdown (2)</text>
+
+        <!-- P1 after check-bet -->
+        <rect x="226" y="192" width="88" height="36" rx="8" fill="#181b24" stroke="#6c9cfc" stroke-width="2"/>
+        <text x="270" y="216" fill="#6c9cfc" font-family="Courier New, monospace" font-size="13" text-anchor="middle" font-weight="bold">P1</text>
+
+        <!-- Terminal: bc (P2 folds) -->
+        <rect x="384" y="192" width="112" height="44" rx="8" fill="#181b24" stroke="#4ade80" stroke-width="2"/>
+        <text x="440" y="212" fill="#4ade80" font-family="Courier New, monospace" font-size="12" text-anchor="middle" font-weight="bold">bc</text>
+        <text x="440" y="228" fill="#8a8fa8" font-family="sans-serif" font-size="10" text-anchor="middle">P2 folds (+1)</text>
+
+        <!-- Terminal: bb (showdown) -->
+        <rect x="564" y="192" width="112" height="44" rx="8" fill="#181b24" stroke="#4ade80" stroke-width="2"/>
+        <text x="620" y="212" fill="#4ade80" font-family="Courier New, monospace" font-size="12" text-anchor="middle" font-weight="bold">bb</text>
+        <text x="620" y="228" fill="#8a8fa8" font-family="sans-serif" font-size="10" text-anchor="middle">Showdown (4)</text>
+
+        <!-- Terminal: cbc (P1 folds) -->
+        <rect x="152" y="292" width="112" height="44" rx="8" fill="#181b24" stroke="#4ade80" stroke-width="2"/>
+        <text x="208" y="312" fill="#4ade80" font-family="Courier New, monospace" font-size="12" text-anchor="middle" font-weight="bold">cbc</text>
+        <text x="208" y="328" fill="#8a8fa8" font-family="sans-serif" font-size="10" text-anchor="middle">P1 folds (-1)</text>
+
+        <!-- Terminal: cbb (showdown) -->
+        <rect x="284" y="292" width="112" height="44" rx="8" fill="#181b24" stroke="#4ade80" stroke-width="2"/>
+        <text x="340" y="312" fill="#4ade80" font-family="Courier New, monospace" font-size="12" text-anchor="middle" font-weight="bold">cbb</text>
+        <text x="340" y="328" fill="#8a8fa8" font-family="sans-serif" font-size="10" text-anchor="middle">Showdown (4)</text>
+
+        <!-- Legend -->
+        <rect x="10" y="350" width="14" height="14" rx="3" fill="none" stroke="#6c9cfc" stroke-width="2"/>
+        <text x="30" y="362" fill="#8a8fa8" font-family="sans-serif" font-size="11">Player 1</text>
+        <rect x="100" y="350" width="14" height="14" rx="3" fill="none" stroke="#a78bfa" stroke-width="2"/>
+        <text x="120" y="362" fill="#8a8fa8" font-family="sans-serif" font-size="11">Player 2</text>
+        <rect x="190" y="350" width="14" height="14" rx="3" fill="none" stroke="#4ade80" stroke-width="2"/>
+        <text x="210" y="362" fill="#8a8fa8" font-family="sans-serif" font-size="11">Terminal (payoff for P1)</text>
+    </svg>
+    </div>
 
     <p>
         There are 5 terminal histories and 4 decision points. But with 3 possible card deals per player
@@ -1016,7 +1095,78 @@ strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]
     </p>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="demo-cfr"><span class="section-num">10.</span> Interactive Demo: CFR Training</h2>
+    <h2 id="demo-play"><span class="section-num">10.</span> Interactive Demo: Play Kuhn Poker</h2>
+
+    <p>
+        Before we look at the solver output, play a few hands of Kuhn Poker against the Nash Equilibrium
+        strategy. You'll be Player 1 (first to act). Try bluffing, try value betting &mdash; and see how
+        the equilibrium responds. Your long-run EV should approach &minus;1/18 &asymp; &minus;0.056
+        per hand (the positional disadvantage).
+    </p>
+
+    <div class="demo-container" role="region" aria-label="Play Kuhn Poker against Nash equilibrium">
+        <h4>You (P1) vs. Nash Equilibrium Bot (P2)</h4>
+
+        <div id="kuhn-game-area">
+            <div style="display: flex; align-items: center; gap: 24px; margin: 16px 0; flex-wrap: wrap;">
+                <div style="background: var(--surface2); border-radius: 10px; padding: 20px 28px; text-align: center; min-width: 120px;">
+                    <div style="font-family: sans-serif; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Your Card</div>
+                    <div id="kuhn-your-card" style="font-size: 48px; font-weight: bold; font-family: 'Courier New', monospace; color: var(--accent); margin: 8px 0;">?</div>
+                </div>
+                <div style="background: var(--surface2); border-radius: 10px; padding: 20px 28px; text-align: center; min-width: 120px;">
+                    <div style="font-family: sans-serif; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Bot's Card</div>
+                    <div id="kuhn-bot-card" style="font-size: 48px; font-weight: bold; font-family: 'Courier New', monospace; color: var(--text-muted); margin: 8px 0;">?</div>
+                </div>
+                <div style="flex: 1; min-width: 180px;">
+                    <div style="font-family: sans-serif; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px;">Pot</div>
+                    <div id="kuhn-pot" style="font-size: 28px; font-weight: bold; font-family: 'Courier New', monospace; color: var(--yellow); margin: 4px 0;">2 chips</div>
+                    <div id="kuhn-action-log" style="font-family: 'Courier New', monospace; font-size: 13px; color: var(--text-muted);"></div>
+                </div>
+            </div>
+
+            <div id="kuhn-buttons" style="margin: 16px 0;">
+                <button onclick="kuhnNewHand()" id="kuhn-deal-btn" style="padding: 12px 28px; font-size: 15px;">Deal Hand</button>
+                <button onclick="kuhnAct(0)" id="kuhn-check-btn" style="padding: 12px 28px; font-size: 15px; display: none;">Check</button>
+                <button onclick="kuhnAct(1)" id="kuhn-bet-btn" style="padding: 12px 28px; font-size: 15px; display: none;">Bet 1</button>
+                <button onclick="kuhnAct(0)" id="kuhn-fold-btn" style="padding: 12px 28px; font-size: 15px; display: none;">Fold</button>
+                <button onclick="kuhnAct(1)" id="kuhn-call-btn" style="padding: 12px 28px; font-size: 15px; display: none;">Call 1</button>
+            </div>
+
+            <div id="kuhn-result" style="font-family: 'Courier New', monospace; font-size: 16px; min-height: 28px; margin: 8px 0; color: var(--text);"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center; font-family: sans-serif; font-size: 14px; margin: 20px 0;">
+            <div style="background: var(--surface2); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace;" id="kuhn-hands">0</div>
+                <div style="color: var(--text-muted);">Hands Played</div>
+            </div>
+            <div style="background: var(--surface2); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace;" id="kuhn-balance">0.00</div>
+                <div style="color: var(--text-muted);">Your P/L (chips)</div>
+            </div>
+            <div style="background: var(--surface2); border-radius: 8px; padding: 14px;">
+                <div style="font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace;" id="kuhn-ev-hand">0.000</div>
+                <div style="color: var(--text-muted);">Avg P/L per hand</div>
+            </div>
+        </div>
+
+        <div class="readout" id="kuhn-game-readout">
+            Press "Deal Hand" to start playing. You are Player 1 (first to act).
+        </div>
+    </div>
+
+    <div class="callout insight">
+        <div class="callout-title">What To Try</div>
+        <ul>
+            <li><strong>Always check-fold with Jack:</strong> You'll lose the ante slowly but safely.</li>
+            <li><strong>Always bet with Jack (over-bluff):</strong> The bot calls with Queen 1/3 of the time &mdash; you'll get caught.</li>
+            <li><strong>Never bet with King (miss value):</strong> You win the pot but miss out on the extra chip from a call.</li>
+            <li><strong>Play the equilibrium:</strong> Match the Nash frequencies. Your average loss will converge to ~0.056 per hand &mdash; the cost of acting first.</li>
+        </ul>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-cfr"><span class="section-num">11.</span> Interactive Demo: CFR Training</h2>
 
     <p>
         Watch CFR learn the Nash Equilibrium of Kuhn Poker in real time. The chart shows
@@ -1042,7 +1192,7 @@ strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="demo-equilibrium"><span class="section-num">11.</span> Interactive Demo: Equilibrium Explorer</h2>
+    <h2 id="demo-equilibrium"><span class="section-num">12.</span> Interactive Demo: Equilibrium Explorer</h2>
 
     <p>
         Explore how the strategies at each information set change as CFR converges.
@@ -1060,7 +1210,7 @@ strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="bridge"><span class="section-num">12.</span> Bridge to Larger Games</h2>
+    <h2 id="bridge"><span class="section-num">13.</span> Bridge to Larger Games</h2>
 
     <p>
         Kuhn Poker has 12 information sets. Real poker has billions. How does CFR scale?
@@ -1102,7 +1252,7 @@ strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="references"><span class="section-num">13.</span> References</h2>
+    <h2 id="references"><span class="section-num">14.</span> References</h2>
 
     <div class="citation">
         <span class="authors">Kuhn, H.</span> (1950).
@@ -1490,6 +1640,178 @@ function displayStrategies() {
     }
 
     container.innerHTML = html;
+}
+
+// ── Play Kuhn Poker Against Nash ──
+const kuhnState = {
+    hands: 0, balance: 0,
+    myCard: -1, botCard: -1, history: "", phase: "idle"
+};
+
+// Nash equilibrium strategy for Player 2 (the bot)
+// alpha parameter: we use alpha = 1/3 for maximum bluffing
+function nashP2Strategy(infoSet) {
+    const strats = {
+        "J:c": [2/3, 1/3],   // bluff bet 1/3
+        "Q:c": [1.0, 0.0],   // always check
+        "K:c": [0.0, 1.0],   // always bet
+        "J:b": [1.0, 0.0],   // always fold
+        "Q:b": [2/3, 1/3],   // call 1/3
+        "K:b": [0.0, 1.0],   // always call
+    };
+    return strats[infoSet] || [0.5, 0.5];
+}
+
+function kuhnSampleAction(strategy) {
+    return Math.random() < strategy[1] ? 1 : 0;
+}
+
+function kuhnNewHand() {
+    // Deal random cards
+    const cards = [0, 1, 2]; // J, Q, K
+    // Shuffle
+    for (let i = 2; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    kuhnState.myCard = cards[0];
+    kuhnState.botCard = cards[1];
+    kuhnState.history = "";
+    kuhnState.phase = "p1-opening";
+
+    const cardSymbols = { 0: "J", 1: "Q", 2: "K" };
+    document.getElementById("kuhn-your-card").textContent = cardSymbols[kuhnState.myCard];
+    document.getElementById("kuhn-your-card").style.color =
+        kuhnState.myCard === 2 ? "var(--green)" : kuhnState.myCard === 0 ? "var(--red)" : "var(--accent)";
+    document.getElementById("kuhn-bot-card").textContent = "?";
+    document.getElementById("kuhn-bot-card").style.color = "var(--text-muted)";
+    document.getElementById("kuhn-pot").textContent = "2 chips";
+    document.getElementById("kuhn-action-log").textContent = "";
+    document.getElementById("kuhn-result").textContent = "";
+
+    // Show check/bet buttons
+    document.getElementById("kuhn-deal-btn").style.display = "none";
+    document.getElementById("kuhn-check-btn").style.display = "";
+    document.getElementById("kuhn-bet-btn").style.display = "";
+    document.getElementById("kuhn-fold-btn").style.display = "none";
+    document.getElementById("kuhn-call-btn").style.display = "none";
+}
+
+function kuhnAct(action) {
+    const actionChar = action === 0 ? 'c' : 'b';
+    kuhnState.history += actionChar;
+
+    const cardNames = { 0: "J", 1: "Q", 2: "K" };
+    const logEl = document.getElementById("kuhn-action-log");
+
+    if (kuhnState.phase === "p1-opening") {
+        if (action === 0) {
+            logEl.textContent = "You check.";
+            // Bot's turn: facing check
+            const botInfoSet = cardNames[kuhnState.botCard] + ":c";
+            const botStrat = nashP2Strategy(botInfoSet);
+            const botAct = kuhnSampleAction(botStrat);
+            kuhnState.history += (botAct === 0 ? 'c' : 'b');
+
+            if (botAct === 0) {
+                // Bot checks — showdown
+                logEl.textContent = "You check. Bot checks.";
+                kuhnResolve();
+            } else {
+                // Bot bets — you face a bet
+                logEl.textContent = "You check. Bot bets 1.";
+                document.getElementById("kuhn-pot").textContent = "3 chips";
+                kuhnState.phase = "p1-facing-bet";
+                document.getElementById("kuhn-check-btn").style.display = "none";
+                document.getElementById("kuhn-bet-btn").style.display = "none";
+                document.getElementById("kuhn-fold-btn").style.display = "";
+                document.getElementById("kuhn-call-btn").style.display = "";
+            }
+        } else {
+            logEl.textContent = "You bet 1.";
+            document.getElementById("kuhn-pot").textContent = "3 chips";
+            // Bot's turn: facing bet
+            const botInfoSet = cardNames[kuhnState.botCard] + ":b";
+            const botStrat = nashP2Strategy(botInfoSet);
+            const botAct = kuhnSampleAction(botStrat);
+            kuhnState.history += (botAct === 0 ? 'c' : 'b');
+
+            if (botAct === 0) {
+                logEl.textContent = "You bet 1. Bot folds.";
+                kuhnResolve();
+            } else {
+                logEl.textContent = "You bet 1. Bot calls.";
+                document.getElementById("kuhn-pot").textContent = "4 chips";
+                kuhnResolve();
+            }
+        }
+    } else if (kuhnState.phase === "p1-facing-bet") {
+        if (action === 0) {
+            // Fold
+            kuhnState.history = kuhnState.history; // already appended
+            logEl.textContent += " You fold.";
+            kuhnResolve();
+        } else {
+            // Call
+            logEl.textContent += " You call.";
+            document.getElementById("kuhn-pot").textContent = "4 chips";
+            kuhnResolve();
+        }
+    }
+}
+
+function kuhnResolve() {
+    const h = kuhnState.history;
+    const cardNames = { 0: "J", 1: "Q", 2: "K" };
+    let payoff = 0; // from P1 (you) perspective
+
+    if (h === "cc") payoff = kuhnState.myCard > kuhnState.botCard ? 1 : -1;
+    else if (h === "bc") payoff = 1; // bot folded
+    else if (h === "bb") payoff = kuhnState.myCard > kuhnState.botCard ? 2 : -2;
+    else if (h === "cbc") payoff = -1; // you folded
+    else if (h === "cbb") payoff = kuhnState.myCard > kuhnState.botCard ? 2 : -2;
+
+    kuhnState.hands++;
+    kuhnState.balance += payoff;
+
+    // Reveal bot card
+    document.getElementById("kuhn-bot-card").textContent = cardNames[kuhnState.botCard];
+    document.getElementById("kuhn-bot-card").style.color =
+        kuhnState.botCard === 2 ? "var(--green)" : kuhnState.botCard === 0 ? "var(--red)" : "var(--accent)";
+
+    // Show result
+    const resultEl = document.getElementById("kuhn-result");
+    if (payoff > 0) {
+        resultEl.innerHTML = `<span style="color: var(--green); font-weight: bold;">You win ${payoff > 1 ? payoff : "1"} chip${payoff > 1 ? "s" : ""}!</span>`;
+    } else if (payoff < 0) {
+        resultEl.innerHTML = `<span style="color: var(--red); font-weight: bold;">You lose ${Math.abs(payoff) > 1 ? Math.abs(payoff) : "1"} chip${Math.abs(payoff) > 1 ? "s" : ""}!</span>`;
+    } else {
+        resultEl.innerHTML = `<span style="color: var(--text-muted);">Push</span>`;
+    }
+
+    // Update stats
+    document.getElementById("kuhn-hands").textContent = kuhnState.hands;
+    const balEl = document.getElementById("kuhn-balance");
+    balEl.textContent = (kuhnState.balance >= 0 ? "+" : "") + kuhnState.balance.toFixed(2);
+    balEl.style.color = kuhnState.balance >= 0 ? "var(--green)" : "var(--red)";
+    const avgEv = kuhnState.balance / kuhnState.hands;
+    const evEl = document.getElementById("kuhn-ev-hand");
+    evEl.textContent = (avgEv >= 0 ? "+" : "") + avgEv.toFixed(3);
+    evEl.style.color = avgEv >= 0 ? "var(--green)" : "var(--red)";
+
+    // Readout
+    document.getElementById("kuhn-game-readout").innerHTML =
+        `<span class="label">Expected avg at Nash: <span class="val">-0.056</span> (1/18 positional disadvantage)</span><br>` +
+        `<span class="label">Your actual avg: <span class="${avgEv >= -0.056 ? 'val-green' : 'val-red'}">${avgEv >= 0 ? "+" : ""}${avgEv.toFixed(4)}</span></span>` +
+        (kuhnState.hands >= 20 ? `<br><span style="color: var(--text-muted);">(${kuhnState.hands} hands &mdash; variance is high in poker, play more for convergence)</span>` : '');
+
+    // Reset buttons
+    kuhnState.phase = "idle";
+    document.getElementById("kuhn-deal-btn").style.display = "";
+    document.getElementById("kuhn-check-btn").style.display = "none";
+    document.getElementById("kuhn-bet-btn").style.display = "none";
+    document.getElementById("kuhn-fold-btn").style.display = "none";
+    document.getElementById("kuhn-call-btn").style.display = "none";
 }
 
 // ── Slider Updates ──
