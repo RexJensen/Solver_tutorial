@@ -493,6 +493,7 @@
             <li><a href="#exploitability">Exploitability: Measuring Distance from Nash</a></li>
             <li><a href="#demo-convergence">Interactive Demo: Convergence in Self-Play</a></li>
             <li><a href="#demo-exploit">Interactive Demo: Exploiting a Fixed Opponent</a></li>
+            <li><a href="#demo-play">Interactive Demo: Play RPS Against the Bot</a></li>
             <li><a href="#bridge">Bridge to Poker: From Normal-Form to Extensive-Form</a></li>
             <li><a href="#references">References &amp; Further Reading</a></li>
         </ol>
@@ -1056,7 +1057,76 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="bridge"><span class="section-num">11.</span> Bridge to Poker: From Normal-Form to Extensive-Form</h2>
+    <h2 id="demo-play"><span class="section-num">11.</span> Interactive Demo: Play RPS Against the Bot</h2>
+
+    <p>
+        Now it's your turn. Play Rock-Paper-Scissors against a regret-matching bot.
+        At first, it plays randomly. But as you play more rounds, it learns your tendencies
+        and adapts. Can you stay unpredictable enough to avoid being exploited?
+    </p>
+
+    <div class="demo-container" role="region" aria-label="Play RPS against a regret-matching bot">
+        <h4>You vs. Regret-Matching Bot</h4>
+
+        <div style="display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap;">
+            <button onclick="playRPSAction(0)" id="btn-rock" style="padding: 12px 28px; font-size: 16px;">Rock</button>
+            <button onclick="playRPSAction(1)" id="btn-paper" style="padding: 12px 28px; font-size: 16px;">Paper</button>
+            <button onclick="playRPSAction(2)" id="btn-scissors" style="padding: 12px 28px; font-size: 16px;">Scissors</button>
+            <button onclick="resetRPSGame()" style="padding: 12px 20px; font-size: 13px; opacity: 0.7;">Reset</button>
+        </div>
+
+        <div id="rps-result" style="font-family: 'Courier New', monospace; font-size: 18px; min-height: 32px; margin-bottom: 12px; color: var(--text);">
+            Pick an action to start playing!
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center; font-family: sans-serif; font-size: 14px; margin: 16px 0;">
+            <div style="background: var(--surface2); border-radius: 8px; padding: 16px;">
+                <div style="font-size: 28px; font-weight: bold; color: var(--green);" id="rps-wins">0</div>
+                <div style="color: var(--text-muted);">Your Wins</div>
+            </div>
+            <div style="background: var(--surface2); border-radius: 8px; padding: 16px;">
+                <div style="font-size: 28px; font-weight: bold; color: var(--text-muted);" id="rps-draws">0</div>
+                <div style="color: var(--text-muted);">Draws</div>
+            </div>
+            <div style="background: var(--surface2); border-radius: 8px; padding: 16px;">
+                <div style="font-size: 28px; font-weight: bold; color: var(--red);" id="rps-losses">0</div>
+                <div style="color: var(--text-muted);">Bot Wins</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 16px;">
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Bot's Current Strategy (derived from regrets against your play):</div>
+            <div class="strat-bar" id="bot-strat-bar">
+                <div class="strat-rock" style="width: 33.3%">R 33%</div>
+                <div class="strat-paper" style="width: 33.3%">P 33%</div>
+                <div class="strat-scissors" style="width: 33.4%">S 33%</div>
+            </div>
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; margin-top: 10px;">Your Observed Frequencies:</div>
+            <div class="strat-bar" id="human-freq-bar">
+                <div class="strat-rock" style="width: 33.3%">R 33%</div>
+                <div class="strat-paper" style="width: 33.3%">P 33%</div>
+                <div class="strat-scissors" style="width: 33.4%">S 33%</div>
+            </div>
+        </div>
+
+        <div class="readout" id="rps-game-readout" style="margin-top: 12px;">
+            <span class="label">Rounds played:</span> <span class="val">0</span>
+        </div>
+    </div>
+
+    <div class="callout insight">
+        <div class="callout-title">What You Should Notice</div>
+        If you keep picking the same action, the bot quickly converges to the counter-strategy.
+        If you try to be random, the bot's strategy stays near uniform [1/3, 1/3, 1/3] &mdash;
+        because there's nothing to exploit. This is regret matching in action: it
+        <strong>adapts to your tendencies</strong> and punishes predictability.
+        <br><br>
+        In a poker solver, this same process runs at every decision point simultaneously.
+        Both "players" adapt to each other until neither can improve &mdash; that's Nash Equilibrium.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="bridge"><span class="section-num">12.</span> Bridge to Poker: From Normal-Form to Extensive-Form</h2>
 
     <p>
         Rock-Paper-Scissors is a <strong>normal-form game</strong>: a single simultaneous decision with
@@ -1111,7 +1181,7 @@
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
-    <h2 id="references"><span class="section-num">12.</span> References &amp; Further Reading</h2>
+    <h2 id="references"><span class="section-num">13.</span> References &amp; Further Reading</h2>
 
     <div class="citation">
         <span class="authors">Von Neumann, J.</span> (1928).
@@ -1465,6 +1535,85 @@ function runExploitDemo() {
     evMath += `<span class="label">Learner converged to:</span> R=<span class="val">${avg[0].toFixed(4)}</span>  P=<span class="val">${avg[1].toFixed(4)}</span>  S=<span class="val">${avg[2].toFixed(4)}</span>`;
 
     document.getElementById("exploit-readout").innerHTML = evMath;
+}
+
+// ── Play RPS Against Bot ──
+let rpsGame = {
+    botRegret: [0, 0, 0],
+    humanCounts: [0, 0, 0],
+    wins: 0, draws: 0, losses: 0, rounds: 0
+};
+
+function resetRPSGame() {
+    rpsGame = { botRegret: [0, 0, 0], humanCounts: [0, 0, 0], wins: 0, draws: 0, losses: 0, rounds: 0 };
+    document.getElementById("rps-wins").textContent = "0";
+    document.getElementById("rps-draws").textContent = "0";
+    document.getElementById("rps-losses").textContent = "0";
+    document.getElementById("rps-result").textContent = "Pick an action to start playing!";
+    document.getElementById("rps-result").style.color = "var(--text)";
+    updateBar("bot-strat-bar", [1/3, 1/3, 1/3]);
+    updateBar("human-freq-bar", [1/3, 1/3, 1/3]);
+    document.getElementById("rps-game-readout").innerHTML =
+        '<span class="label">Rounds played:</span> <span class="val">0</span>';
+}
+
+function playRPSAction(humanAction) {
+    // Bot picks action from its current strategy
+    const botStrat = getStrategy(rpsGame.botRegret);
+    const rand = Math.random();
+    let botAction = 0;
+    if (rand > botStrat[0] + botStrat[1]) botAction = 2;
+    else if (rand > botStrat[0]) botAction = 1;
+
+    // Determine outcome
+    const result = PAYOFF[humanAction][botAction]; // from human's perspective
+    rpsGame.rounds++;
+    rpsGame.humanCounts[humanAction]++;
+
+    if (result > 0) rpsGame.wins++;
+    else if (result < 0) rpsGame.losses++;
+    else rpsGame.draws++;
+
+    // Update bot's regrets: the bot's "opponent" is the human.
+    // The human played a pure action, so their "strategy" is a one-hot vector.
+    const humanStrat = [0, 0, 0];
+    humanStrat[humanAction] = 1;
+    const botActionEVs = computeActionEVs(humanStrat);
+    const botStratEV = botStrat.reduce((s, p, i) => s + p * botActionEVs[i], 0);
+    for (let a = 0; a < 3; a++) {
+        rpsGame.botRegret[a] += botActionEVs[a] - botStratEV;
+    }
+
+    // Display result
+    const resultEl = document.getElementById("rps-result");
+    const hName = ACTIONS[humanAction];
+    const bName = ACTIONS[botAction];
+    if (result > 0) {
+        resultEl.innerHTML = `You: <span style="color:var(--green)">${hName}</span> &nbsp;vs&nbsp; Bot: <span style="color:var(--red)">${bName}</span> &mdash; <strong style="color:var(--green)">You win!</strong>`;
+    } else if (result < 0) {
+        resultEl.innerHTML = `You: <span style="color:var(--red)">${hName}</span> &nbsp;vs&nbsp; Bot: <span style="color:var(--green)">${bName}</span> &mdash; <strong style="color:var(--red)">Bot wins!</strong>`;
+    } else {
+        resultEl.innerHTML = `You: <span style="color:var(--text-muted)">${hName}</span> &nbsp;vs&nbsp; Bot: <span style="color:var(--text-muted)">${bName}</span> &mdash; <strong style="color:var(--text-muted)">Draw</strong>`;
+    }
+
+    // Update scoreboard
+    document.getElementById("rps-wins").textContent = rpsGame.wins;
+    document.getElementById("rps-draws").textContent = rpsGame.draws;
+    document.getElementById("rps-losses").textContent = rpsGame.losses;
+
+    // Update strategy bars
+    const newBotStrat = getStrategy(rpsGame.botRegret);
+    updateBar("bot-strat-bar", newBotStrat);
+    const totalH = rpsGame.humanCounts.reduce((a, b) => a + b, 0);
+    const humanFreq = rpsGame.humanCounts.map(c => c / totalH);
+    updateBar("human-freq-bar", humanFreq);
+
+    // Readout
+    const winRate = rpsGame.rounds > 0 ? ((rpsGame.wins / rpsGame.rounds) * 100).toFixed(1) : "0.0";
+    document.getElementById("rps-game-readout").innerHTML =
+        `<span class="label">Rounds played:</span> <span class="val">${rpsGame.rounds}</span> &nbsp;|&nbsp; ` +
+        `<span class="label">Your win rate:</span> <span class="${rpsGame.wins > rpsGame.losses ? 'val-green' : 'val-red'}">${winRate}%</span> &nbsp;|&nbsp; ` +
+        `<span class="label">Bot strategy:</span> R=<span class="val">${newBotStrat[0].toFixed(2)}</span> P=<span class="val">${newBotStrat[1].toFixed(2)}</span> S=<span class="val">${newBotStrat[2].toFixed(2)}</span>`;
 }
 
 // ── Initialize demos on page load ──
