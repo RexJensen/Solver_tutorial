@@ -6,7 +6,7 @@ Game: Rock-Paper-Scissors
 
 THEORY
 ------
-Every poker solver (PIOsolver, GTO Wizard, etc.) is built on a single idea
+Every poker solver (PIOsolver, GTO Wizard, etc.) is built on a core idea
 called REGRET MATCHING. Before we can understand CFR in poker, we need to
 understand regret matching in isolation.
 
@@ -38,16 +38,17 @@ KEY DEFINITIONS:
    Against this strategy, every action yields EV = 0.
 
 WHY THIS MATTERS FOR POKER:
-   CFR applies regret matching at EVERY decision point (information set)
-   in the game tree. The average strategy across all iterations converges
-   to Nash Equilibrium. That's literally what PIOsolver does — it just
-   does it across millions of information sets simultaneously.
+   CFR applies regret matching at every decision point (information set)
+   in a game tree. The average strategy across all iterations converges
+   to Nash Equilibrium. This is the core update idea underlying all
+   CFR-based solvers — though production solvers like PIOsolver add
+   many practical layers: abstraction, sampling, pruning, discounting,
+   and engineering optimizations.
 
 =============================================================================
 """
 
 import numpy as np
-from typing import Optional
 
 
 # ── Game Definition ────────────────────────────────────────────────────────
@@ -69,51 +70,64 @@ class RegretMatchingPlayer:
     """
     A player that uses Regret Matching to learn an optimal strategy.
 
-    This is the fundamental building block of ALL CFR-based solvers.
-    Everything in PIOsolver/GTO Wizard builds on this exact mechanism.
+    This is the fundamental building block of CFR-based solvers.
 
     The algorithm:
-    1. Start with uniform strategy
-    2. Play against opponent, observe outcome
-    3. For each action you DIDN'T take, compute: "how much better
-       would I have done?" — this is the REGRET for that action
+    1. Start with some initial strategy
+    2. Compute expected values against opponent's strategy
+    3. For each action, compute: "how much better would this action have
+       been vs what my strategy earned?" — this is the REGRET
     4. Accumulate regrets over many iterations
-    5. Set your strategy proportional to positive cumulative regrets
+    5. Set next strategy proportional to positive cumulative regrets
     6. The AVERAGE strategy (not current strategy) converges to Nash
     """
 
-    def __init__(self, name: str = "Player"):
+    def __init__(self, name: str = "Player",
+                 initial_strategy: np.ndarray = None):
         self.name = name
         # Cumulative regret for each action (the core state of the algorithm)
         self.cumulative_regret = np.zeros(NUM_ACTIONS)
         # Sum of all strategies played (for computing average strategy)
         self.strategy_sum = np.zeros(NUM_ACTIONS)
 
+        # Allow non-uniform initialization to demonstrate real convergence
+        if initial_strategy is not None:
+            # Seed the regrets so that get_strategy() produces the desired
+            # initial strategy. We scale by an arbitrary constant; the
+            # normalization in get_strategy() cancels it out.
+            self.cumulative_regret = initial_strategy.copy()
+
     def get_strategy(self) -> np.ndarray:
         """
         Convert cumulative regrets into a strategy via Regret Matching.
 
-        This is THE key function. Memorize it. You'll see it again in
-        every single lesson going forward.
+        This is THE key function. You'll see it again in every lesson.
 
         Rule:
         - Take all positive regrets
         - Normalize them to sum to 1.0
         - If no positive regrets exist, play uniformly
+
+        NOTE: This method is a pure computation. It does NOT update
+        strategy_sum — that is done explicitly in the training loop
+        to keep concerns separated.
         """
         # Clip negative regrets to zero — we only care about positive regret
         positive_regret = np.maximum(self.cumulative_regret, 0)
         total = positive_regret.sum()
 
         if total > 0:
-            strategy = positive_regret / total
+            return positive_regret / total
         else:
             # No positive regrets — default to uniform random
-            strategy = np.ones(NUM_ACTIONS) / NUM_ACTIONS
+            return np.ones(NUM_ACTIONS) / NUM_ACTIONS
 
-        # Accumulate strategy for computing the average later
+    def accumulate_strategy(self, strategy: np.ndarray):
+        """
+        Add the current iteration's strategy to the running sum.
+        Called once per iteration in the training loop.
+        """
         self.strategy_sum += strategy
-        return strategy
 
     def get_average_strategy(self) -> np.ndarray:
         """
@@ -124,8 +138,7 @@ class RegretMatchingPlayer:
         - Current strategy (from get_strategy): oscillates, doesn't converge
         - Average strategy: converges to Nash Equilibrium
 
-        This is why PIOsolver reports an "average strategy" — it's the
-        average over all CFR iterations, not the final iteration's strategy.
+        Solvers report this average strategy as the "solution."
         """
         total = self.strategy_sum.sum()
         if total > 0:
@@ -133,60 +146,106 @@ class RegretMatchingPlayer:
         else:
             return np.ones(NUM_ACTIONS) / NUM_ACTIONS
 
-    def update_regrets(self, opponent_strategy: np.ndarray):
+    def update_regrets(self, my_strategy: np.ndarray,
+                       opponent_strategy: np.ndarray):
         """
         Compute and accumulate regrets against the opponent's strategy.
 
         For each action a:
-            regret[a] = EV(always playing a) - EV(our current strategy)
+            regret[a] = EV(always playing a) - EV(my_strategy)
 
         This tells us: "How much better would action a have been compared
-        to what we actually did (in expectation)?"
-        """
-        strategy = self.get_strategy()
+        to what my current strategy earned (in expectation)?"
 
-        # Expected value of our current mixed strategy
-        # For each of our actions, compute EV against opponent's strategy
-        action_evs = PAYOFF @ opponent_strategy  # EV of each pure action
+        Takes my_strategy as an explicit argument to avoid recomputing it
+        (which was the source of a double-accumulation bug in v1).
+        """
+        # EV of each pure action against opponent's mixed strategy
+        action_evs = PAYOFF @ opponent_strategy
 
         # EV of our current mixed strategy
-        strategy_ev = strategy @ action_evs
+        strategy_ev = my_strategy @ action_evs
 
-        # Regret for each action = (what it would have earned) - (what we earned)
+        # Regret = (what action would have earned) - (what we earned)
         regrets = action_evs - strategy_ev
 
-        # Accumulate regrets
+        # Accumulate
         self.cumulative_regret += regrets
 
 
-def train_rps(num_iterations: int = 100_000, verbose: bool = True) -> tuple:
+def compute_exploitability(strategy: np.ndarray) -> float:
+    """
+    Compute the exploitability of a strategy in a two-player zero-sum game.
+
+    In a two-player zero-sum normal-form game, exploitability of a strategy
+    sigma is defined as the best-response value against sigma:
+
+        exploitability(sigma) = max_a [ EV(a, sigma) ]
+
+    where a ranges over the opponent's pure actions.
+
+    At Nash Equilibrium, exploitability = 0, meaning no opponent action
+    can achieve positive EV.
+
+    NOTE: In extensive-form games (like poker), exploitability is typically
+    defined as the sum of both players' best-response values divided by 2
+    (sometimes called "NashConv / 2"). For a symmetric zero-sum game like
+    RPS with a symmetric strategy, the single-player version suffices.
+    """
+    action_evs = PAYOFF @ strategy
+    return action_evs.max()
+
+
+def train_rps(num_iterations: int = 100_000,
+              p1_init: np.ndarray = None,
+              p2_init: np.ndarray = None,
+              verbose: bool = True) -> tuple:
     """
     Train two regret-matching players against each other in RPS.
 
-    Both players simultaneously learn. After enough iterations,
-    both converge to the Nash Equilibrium: [1/3, 1/3, 1/3].
+    By default, both players start with biased (non-equilibrium) strategies
+    so that the demo genuinely shows convergence TOWARD equilibrium, rather
+    than equilibrium stability from a symmetric initialization.
+
+    If both players start uniform (which is already Nash in RPS), regrets
+    stay at zero and nothing "learns." Starting from biased strategies
+    makes the convergence visible and honest.
     """
-    player1 = RegretMatchingPlayer("Player 1")
-    player2 = RegretMatchingPlayer("Player 2")
+    # Default: start from biased, non-equilibrium strategies
+    if p1_init is None:
+        p1_init = np.array([0.8, 0.1, 0.1])  # Player 1 favors Rock
+    if p2_init is None:
+        p2_init = np.array([0.1, 0.1, 0.8])  # Player 2 favors Scissors
+
+    player1 = RegretMatchingPlayer("Player 1", initial_strategy=p1_init)
+    player2 = RegretMatchingPlayer("Player 2", initial_strategy=p2_init)
 
     for i in range(num_iterations):
         # Each player computes their current strategy from regrets
         strategy1 = player1.get_strategy()
         strategy2 = player2.get_strategy()
 
+        # Accumulate strategies ONCE per iteration (separated from get_strategy)
+        player1.accumulate_strategy(strategy1)
+        player2.accumulate_strategy(strategy2)
+
         # Each player updates regrets based on opponent's strategy
-        player1.update_regrets(strategy2)
-        player2.update_regrets(strategy1)
+        player1.update_regrets(strategy1, strategy2)
+        player2.update_regrets(strategy2, strategy1)
 
         # Print progress at exponential intervals
-        if verbose and (i + 1) in {10, 100, 1000, 10000, 100000}:
+        if verbose and (i + 1) in {1, 10, 100, 1000, 10000, 100000}:
             avg1 = player1.get_average_strategy()
             avg2 = player2.get_average_strategy()
+            expl1 = compute_exploitability(avg1)
+            expl2 = compute_exploitability(avg2)
             print(f"\n── Iteration {i+1:,} ──")
             print(f"  {player1.name} avg strategy: "
-                  f"R={avg1[0]:.4f}  P={avg1[1]:.4f}  S={avg1[2]:.4f}")
+                  f"R={avg1[0]:.4f}  P={avg1[1]:.4f}  S={avg1[2]:.4f}"
+                  f"  (exploitability: {expl1:.6f})")
             print(f"  {player2.name} avg strategy: "
-                  f"R={avg2[0]:.4f}  P={avg2[1]:.4f}  S={avg2[2]:.4f}")
+                  f"R={avg2[0]:.4f}  P={avg2[1]:.4f}  S={avg2[2]:.4f}"
+                  f"  (exploitability: {expl2:.6f})")
 
     return player1, player2
 
@@ -199,11 +258,8 @@ def train_against_fixed_opponent(
     """
     Train a regret-matching player against a FIXED (non-adaptive) opponent.
 
-    This is instructive because it shows how regret matching EXPLOITS
-    a suboptimal opponent.
-
-    If opponent always plays Rock: learner converges to always Paper.
-    If opponent plays Rock 50%, Paper 50%: learner exploits with mostly Paper.
+    This shows how regret matching finds the BEST RESPONSE to any fixed
+    opponent strategy. The best response is the action(s) with highest EV.
 
     KEY INSIGHT FOR POKER:
     Against a non-equilibrium opponent, the best response is NOT Nash.
@@ -214,8 +270,9 @@ def train_against_fixed_opponent(
     learner = RegretMatchingPlayer("Learner")
 
     for i in range(num_iterations):
-        learner.get_strategy()  # updates strategy_sum
-        learner.update_regrets(opponent_strategy)
+        strategy = learner.get_strategy()
+        learner.accumulate_strategy(strategy)
+        learner.update_regrets(strategy, opponent_strategy)
 
         if verbose and (i + 1) in {10, 100, 1000, 10000, 100000}:
             avg = learner.get_average_strategy()
@@ -226,39 +283,16 @@ def train_against_fixed_opponent(
     return learner
 
 
-# ── Exercises ──────────────────────────────────────────────────────────────
-
-def exercise_exploitability():
-    """
-    EXERCISE: Understanding Exploitability
-
-    Exploitability = how much EV an opponent can gain by best-responding
-    to your strategy. At Nash Equilibrium, exploitability = 0.
-
-    This is THE metric that PIOsolver uses to determine convergence.
-    When it says "converged to 0.3% pot" — that means the exploitability
-    is 0.3% of the pot.
-    """
-    print("=" * 65)
-    print("EXERCISE: Computing Exploitability")
-    print("=" * 65)
-
-    player1, player2 = train_rps(num_iterations=100_000, verbose=False)
-
-    avg1 = player1.get_average_strategy()
-    avg2 = player2.get_average_strategy()
-
-    # Exploitability of player 1 = best response EV against player 1's strategy
-    # Best response: for each of opponent's possible actions, pick the one
-    # with highest EV against player1's strategy
-    action_evs_vs_p1 = PAYOFF @ avg1  # EV of each action vs player1
-    best_response_ev = action_evs_vs_p1.max()
-
-    print(f"\nPlayer 1 avg strategy: R={avg1[0]:.4f}  P={avg1[1]:.4f}  S={avg1[2]:.4f}")
-    print(f"Player 2 avg strategy: R={avg2[0]:.4f}  P={avg2[1]:.4f}  S={avg2[2]:.4f}")
-    print(f"\nBest response EV against Player 1: {best_response_ev:.6f}")
-    print(f"(At Nash Equilibrium, this should be ≈ 0.0)")
-    print(f"\nExploitability of Player 1: {best_response_ev:.6f}")
+def show_best_response_math(opponent_strategy: np.ndarray, label: str):
+    """Show the EV calculation for each action against an opponent."""
+    print(f"\n  Why? EV of each action vs {label}:")
+    action_evs = PAYOFF @ opponent_strategy
+    for a in range(NUM_ACTIONS):
+        print(f"    EV({ACTION_NAMES[a]:8s}) = "
+              f"{' + '.join(f'({PAYOFF[a,o]:+.0f})({opponent_strategy[o]:.1f})' for o in range(NUM_ACTIONS))}"
+              f" = {action_evs[a]:+.2f}")
+    best = ACTION_NAMES[action_evs.argmax()]
+    print(f"  Best response: {best} (EV = {action_evs.max():+.2f})")
 
 
 # ── Main ───────────────────────────────────────────────────────────────────
@@ -269,26 +303,48 @@ if __name__ == "__main__":
     print("=" * 65)
 
     # ── Demo 1: Self-play convergence to Nash ──
-    print("\n\n📊 DEMO 1: Two adaptive players converging to Nash Equilibrium")
+    print("\n\nDEMO 1: Two biased players converging to Nash Equilibrium")
     print("-" * 65)
-    print("Both players use regret matching. Watch them converge to [1/3, 1/3, 1/3].")
+    print("Player 1 starts biased toward Rock [0.8, 0.1, 0.1].")
+    print("Player 2 starts biased toward Scissors [0.1, 0.1, 0.8].")
+    print("Watch them converge to [1/3, 1/3, 1/3] and exploitability -> 0.")
     player1, player2 = train_rps(num_iterations=100_000)
 
-    # ── Demo 2: Exploiting a fixed opponent ──
-    print("\n\n📊 DEMO 2: Exploiting an opponent who always plays Rock")
+    # ── Demo 2: Exploiting a fixed opponent (pure Rock) ──
+    print("\n\nDEMO 2: Exploiting an opponent who always plays Rock")
     print("-" * 65)
-    print("Against Rock-only, regret matching converges to always Paper.")
     always_rock = np.array([1.0, 0.0, 0.0])
     learner = train_against_fixed_opponent(always_rock, num_iterations=100_000)
+    show_best_response_math(always_rock, "[R=1.0, P=0.0, S=0.0]")
 
-    print("\n\n📊 DEMO 3: Exploiting an opponent who plays Rock 60%, Paper 30%, Scissors 10%")
+    # ── Demo 3: Exploiting a biased opponent ──
+    print("\n\nDEMO 3: Exploiting opponent [R=0.6, P=0.3, S=0.1]")
     print("-" * 65)
     biased = np.array([0.6, 0.3, 0.1])
     learner = train_against_fixed_opponent(biased, num_iterations=100_000)
+    show_best_response_math(biased, "[R=0.6, P=0.3, S=0.1]")
 
     # ── Demo 4: Exploitability ──
-    print("\n")
-    exercise_exploitability()
+    print("\n\n" + "=" * 65)
+    print("DEMO 4: Exploitability as a Convergence Metric")
+    print("=" * 65)
+    print("""
+In a two-player zero-sum game, the exploitability of strategy sigma is:
+
+    exploitability(sigma) = max_a [ EV(a, sigma) ]
+
+This is the best-response EV an opponent can achieve against sigma.
+At Nash Equilibrium, exploitability = 0 (no action beats the strategy).
+
+For extensive-form games like poker, solvers typically report exploitability
+as (sum of both players' best-response values) / 2, often as a percentage
+of the pot. When PIOsolver says "0.3% of pot," that's this metric.
+""")
+    player1, player2 = train_rps(num_iterations=100_000, verbose=False)
+    avg1 = player1.get_average_strategy()
+    expl = compute_exploitability(avg1)
+    print(f"Player 1 avg strategy: R={avg1[0]:.4f}  P={avg1[1]:.4f}  S={avg1[2]:.4f}")
+    print(f"Exploitability: {expl:.6f}  (should be ~0.0 at Nash)")
 
     # ── Summary ──
     print("\n\n" + "=" * 65)
@@ -299,8 +355,9 @@ if __name__ == "__main__":
     2. REGRET MATCHING = Play actions proportional to positive cumulative regret
     3. The AVERAGE strategy converges to Nash Equilibrium
     4. Against fixed opponents, regret matching finds the BEST RESPONSE
-    5. EXPLOITABILITY measures distance from Nash — this is how solvers
-       measure convergence (e.g., "0.3% of pot")
+       (the action with highest EV — verify with the math!)
+    5. EXPLOITABILITY = max EV an opponent can gain by best-responding.
+       At Nash, exploitability = 0. Solvers use this to measure convergence.
 
     WHAT'S NEXT (Lesson 2):
     We'll apply this same regret matching at every decision point in a
