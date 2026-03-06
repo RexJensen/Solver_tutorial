@@ -440,6 +440,32 @@
         .citation .authors { color: var(--text); }
         .citation .title { font-style: italic; color: var(--accent); }
 
+        /* ── Expandable Citations ── */
+        .citation details { margin-top: 8px; }
+        .citation summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 13px;
+            user-select: none;
+        }
+        .citation summary:hover { text-decoration: underline; }
+        .citation .description {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            line-height: 1.65;
+            font-size: 13.5px;
+        }
+        .citation .description p { margin-bottom: 10px; }
+        .citation .description p:last-child { margin-bottom: 0; }
+        .citation .paper-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 600px) {
             .hero h1 { font-size: 28px; }
@@ -669,11 +695,27 @@
         <span class="authors">Von Neumann, J.</span> (1928).
         <span class="title">Zur Theorie der Gesellschaftsspiele.</span>
         Mathematische Annalen, 100(1), 295–320.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This landmark paper single-handedly founded modern game theory. Von Neumann proved that in any finite two-player zero-sum game, there exists a pair of optimal mixed strategies and a well-defined game value. The original proof used a sophisticated topological argument; a simpler version via Brouwer's fixed-point theorem followed in 1937.</p>
+                <p>Von Neumann considered the minimax theorem essential to the entire field: <em>"As far as I can see, there could be no theory of games without that theorem. I thought there was nothing worth publishing until the Minimax Theorem was proved."</em> The paper introduced the concept of mixed (randomized) strategies and established the mathematical framework that would later be developed into the comprehensive theory presented in his 1944 book with Morgenstern.</p>
+                <a class="paper-link" href="https://link.springer.com/article/10.1007/BF01448847" target="_blank">Read the paper (Springer) &rarr;</a>
+            </div>
+        </details>
     </div>
     <div class="citation">
         <span class="authors">Nash, J.</span> (1950).
         <span class="title">Equilibrium points in n-person games.</span>
         Proceedings of the National Academy of Sciences, 36(1), 48–49.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>One of the most influential papers in mathematics and economics — and remarkably, it is only <strong>one page long</strong>. Nash proved that every finite game with any number of players has at least one equilibrium point in mixed strategies. The proof uses Kakutani's fixed-point theorem in an elegant argument that fits on a single printed page.</p>
+                <p>While Von Neumann's minimax theorem covered only two-player zero-sum games, Nash's generalization applies to any number of players and any payoff structure. The concept of a "Nash Equilibrium" became foundational across economics, political science, evolutionary biology, and computer science. Nash received the 1994 Nobel Prize in Economics for this work.</p>
+                <a class="paper-link" href="https://www.pnas.org/doi/10.1073/pnas.36.1.48" target="_blank">Read the paper (PNAS) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -832,6 +874,14 @@
         <span class="authors">Hart, S., &amp; Mas-Colell, A.</span> (2000).
         <span class="title">A simple adaptive procedure leading to correlated equilibrium.</span>
         Econometrica, 68(5), 1127–1150.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper introduced the <strong>regret matching</strong> algorithm studied in this chapter. Hart and Mas-Colell showed that if players adjust their strategies with probabilities proportional to their accumulated regret for not having played alternative actions, then the empirical distribution of play converges to the set of <em>correlated equilibria</em> of the game.</p>
+                <p>The elegance of regret matching lies in its simplicity: each player needs only to track a single number per action (cumulative regret), and the strategy update is a straightforward normalization. Despite this simplicity, the procedure has strong convergence guarantees. In two-player zero-sum games, when both players use regret matching, their average strategies converge to a Nash Equilibrium — the specific property exploited by all CFR-based poker solvers.</p>
+                <a class="paper-link" href="https://onlinelibrary.wiley.com/doi/abs/10.1111/1468-0262.00153" target="_blank">Read the paper (Econometrica) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -900,6 +950,14 @@
         <span class="authors">Blackwell, D.</span> (1956).
         <span class="title">An analog of the minimax theorem for vector payoffs.</span>
         Pacific Journal of Mathematics, 6(1), 1–8.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>Blackwell extended Von Neumann's minimax theorem from scalar payoffs to <strong>vector-valued payoffs</strong>. In the scalar case, a player can guarantee a certain expected payoff. Blackwell asked: when payoffs are vectors in R<sup>d</sup>, can a player guarantee that the average payoff vector converges to a target set?</p>
+                <p>He proved the <strong>approachability theorem</strong>: a closed convex set S is "approachable" by a player if and only if for every opponent strategy, there exists a counter-strategy whose expected payoff lies in S. The proof is constructive — at each step, project the running average onto S and play optimally for the resulting halfspace game. Regret matching is a special case: the "target set" is the non-positive orthant of regret space, and Blackwell's procedure becomes exactly the regret-matching update rule.</p>
+                <a class="paper-link" href="https://projecteuclid.org/journals/pacific-journal-of-mathematics/volume-6/issue-1/An-analog-of-the-minimax-theorem-for-vector-payoffs/pjm/1103044235.full" target="_blank">Read the paper (Project Euclid) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -1178,6 +1236,14 @@
         <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
         <span class="title">Regret minimization in games with incomplete information.</span>
         Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This is the paper that introduced <strong>Counterfactual Regret Minimization (CFR)</strong> — the algorithm that powers every modern poker solver. The key insight is a decomposition: overall regret in an extensive-form game can be bounded by the sum of <em>counterfactual</em> regrets at individual information sets. This means you can minimize regret independently at each decision point using simple regret matching, then combine the guarantees.</p>
+                <p>The practical impact was immediate. CFR could solve poker game abstractions with up to 10<sup>12</sup> states — two orders of magnitude larger than previous methods based on linear programming. Strategies produced by CFR were used in the 2007 Annual Computer Poker Competition. The paper spawned an entire family of algorithms (CFR+, MCCFR, Discounted CFR) that remain the state of the art for imperfect-information game solving.</p>
+                <a class="paper-link" href="https://proceedings.neurips.cc/paper/2007/file/08d98638c6fcd194a4b1e6992063e944-Paper.pdf" target="_blank">Read the paper (NeurIPS) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <!-- ══════════════════════════════════════════════════════════════════ -->
@@ -1187,49 +1253,98 @@
         <span class="authors">Von Neumann, J.</span> (1928).
         <span class="title">Zur Theorie der Gesellschaftsspiele.</span>
         Mathematische Annalen, 100(1), 295–320.
-        <br>The foundational paper proving the minimax theorem for two-player zero-sum games.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This landmark paper single-handedly founded modern game theory. Von Neumann proved that in any finite two-player zero-sum game, there exists a pair of optimal mixed strategies and a well-defined game value — the minimax theorem. His original proof used a sophisticated topological argument; a simpler proof via Brouwer's fixed-point theorem followed in 1937, and Jean Ville provided an even more elegant convexity-based proof in 1938.</p>
+                <p>Von Neumann considered this result essential to the entire field: <em>"As far as I can see, there could be no theory of games without that theorem."</em> The paper introduced mixed (randomized) strategies and established the mathematical framework that would later be developed into the comprehensive theory presented in his 1944 book with Morgenstern, <em>Theory of Games and Economic Behavior</em>.</p>
+                <a class="paper-link" href="https://link.springer.com/article/10.1007/BF01448847" target="_blank">Read the paper (Springer) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Nash, J.</span> (1950).
         <span class="title">Equilibrium points in n-person games.</span>
         Proceedings of the National Academy of Sciences, 36(1), 48–49.
-        <br>The one-page proof that every finite game has at least one equilibrium in mixed strategies.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>One of the most influential papers in the history of mathematics and economics — and remarkably, it is only <strong>one page long</strong>. Nash proved that every finite game with any number of players has at least one equilibrium point in mixed strategies. The proof applies Kakutani's fixed-point theorem to the "countering" correspondence: the set of best responses to any strategy profile is convex and varies continuously, so a fixed point must exist.</p>
+                <p>While Von Neumann's minimax theorem covered only two-player zero-sum games, Nash's generalization applies to any number of players and any payoff structure. The "Nash Equilibrium" concept became foundational across economics, political science, evolutionary biology, and computer science. Nash received the 1994 Nobel Prize in Economics for this work.</p>
+                <a class="paper-link" href="https://www.pnas.org/doi/10.1073/pnas.36.1.48" target="_blank">Read the paper (PNAS, free access) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Blackwell, D.</span> (1956).
         <span class="title">An analog of the minimax theorem for vector payoffs.</span>
         Pacific Journal of Mathematics, 6(1), 1–8.
-        <br>The approachability theorem that provides the theoretical foundation for regret-based learning.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>Blackwell extended Von Neumann's minimax theorem from scalar payoffs to <strong>vector-valued payoffs</strong>. He defined a set S as "approachable" if a player can force the time-averaged payoff vector to converge to S regardless of the opponent's actions, and proved the <em>approachability theorem</em>: a closed convex set is approachable if and only if for every opponent strategy, there exists a counter-strategy whose expected payoff vector lies in S.</p>
+                <p>The proof is constructive: at each step, project the running average onto S and play optimally for the resulting halfspace game. Regret matching turns out to be a special case — the "target set" is the non-positive orthant of regret space, and Blackwell's procedure becomes exactly the regret-matching update. This connection provides the deepest theoretical explanation for why regret matching converges.</p>
+                <a class="paper-link" href="https://projecteuclid.org/journals/pacific-journal-of-mathematics/volume-6/issue-1/An-analog-of-the-minimax-theorem-for-vector-payoffs/pjm/1103044235.full" target="_blank">Read the paper (Project Euclid, free access) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Hart, S., &amp; Mas-Colell, A.</span> (2000).
         <span class="title">A simple adaptive procedure leading to correlated equilibrium.</span>
         Econometrica, 68(5), 1127–1150.
-        <br>Introduced the regret matching algorithm studied in this chapter.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper introduced <strong>regret matching</strong> — the algorithm at the heart of this chapter and every poker solver. Hart and Mas-Colell showed that if players adjust their strategies with probabilities proportional to their positive regret for not having played alternative actions, the empirical distribution of play converges to the set of correlated equilibria. The procedure requires tracking only one number per action (cumulative regret), making it remarkably simple.</p>
+                <p>In two-player zero-sum games specifically, when both players use regret matching, their <em>average</em> strategies converge to a Nash Equilibrium. This property is what CFR-based poker solvers exploit: run regret matching at every information set simultaneously, and the overall average strategy profile converges to Nash. The paper has over 1,300 citations and remains one of the most popular algorithms in game-theoretic applications.</p>
+                <a class="paper-link" href="https://onlinelibrary.wiley.com/doi/abs/10.1111/1468-0262.00153" target="_blank">Read the paper (Econometrica) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
         <span class="title">Regret minimization in games with incomplete information.</span>
         Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
-        <br>The paper that introduced CFR — applying regret matching to extensive-form games. This is the direct ancestor of all modern poker solvers.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>The paper that introduced <strong>Counterfactual Regret Minimization (CFR)</strong> — the direct ancestor of all modern poker solvers. The key contribution is a decomposition theorem: overall regret in an extensive-form game can be bounded by the sum of <em>counterfactual</em> regrets at each information set. This means you can run simple regret matching independently at each decision point, and the combination converges to Nash Equilibrium.</p>
+                <p>The practical impact was immediate and dramatic. CFR could solve poker game abstractions with up to 10<sup>12</sup> states — two orders of magnitude larger than the linear programming methods used previously. Strategies generated by CFR were used in the 2007 Annual Computer Poker Competition and Man-vs-Machine Championship. The paper spawned a family of variants (CFR+, MCCFR, Discounted CFR) that remain the state of the art.</p>
+                <a class="paper-link" href="https://proceedings.neurips.cc/paper/2007/file/08d98638c6fcd194a4b1e6992063e944-Paper.pdf" target="_blank">Read the paper (NeurIPS, PDF) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Tammelin, O., Burch, N., Johanson, M., &amp; Bowling, M.</span> (2015).
         <span class="title">Solving heads-up limit Texas hold'em.</span>
         Science, 347(6218), 145–149.
-        <br>CFR+ was used to essentially solve Heads-Up Limit Hold'em — the first significant poker variant solved.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper announced that Heads-Up Limit Texas Hold'em — a game with 3.19 &times; 10<sup>14</sup> information sets — had been "essentially weakly solved." Their program <strong>Cepheus</strong> plays so close to the game-theoretic optimum that it cannot be statistically distinguished from perfect play over a human lifetime of poker. This was the first imperfect-information game played competitively by humans to be solved.</p>
+                <p>The breakthrough came from <strong>CFR+</strong>, a variant of CFR invented by Oskari Tammelin that floors negative regrets to zero at each step (rather than allowing them to accumulate). This seemingly minor change dramatically accelerates convergence — CFR+ solved the game using 4,800 CPUs over 68 days. The paper also formally confirmed the conventional poker wisdom that the dealer holds a significant strategic advantage.</p>
+                <a class="paper-link" href="https://www.science.org/doi/10.1126/science.1259433" target="_blank">Read the paper (Science) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Brown, N., &amp; Sandholm, T.</span> (2019).
         <span class="title">Superhuman AI for multiplayer poker.</span>
         Science, 365(6456), 885–890.
-        <br>Pluribus — a superhuman AI for 6-player no-limit hold'em, built on Monte Carlo CFR with abstraction.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p><strong>Pluribus</strong> was the first AI to defeat elite human professionals at six-player no-limit Texas Hold'em — the most popular form of poker played worldwide. When pitted against five top professionals including Darren Elias (most World Poker Tour titles) and Chris Ferguson (six WSOP bracelets), Pluribus achieved a win rate of approximately 5 big blinds per 100 hands over 10,000 hands.</p>
+                <p>Technically, Pluribus uses Monte Carlo CFR for self-play training to produce a "blueprint" strategy, then performs real-time search during play. Remarkably, it uses no neural networks — its strategy comes entirely from CFR. It trained in just 8 days on a 4-core server with less than 512 GB of RAM (compared to millions of core-hours for other game-playing AIs). The paper also revealed surprising strategic findings: Pluribus frequently used "donk bets" — a move traditionally considered weak by human players.</p>
+                <a class="paper-link" href="https://www.science.org/doi/10.1126/science.aay2400" target="_blank">Read the paper (Science) &rarr;</a>
+            </div>
+        </details>
     </div>
 
 </div>
