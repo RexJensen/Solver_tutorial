@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 3: Leduc Poker &amp; Multi-Street CFR | CFR Poker Solver Course</title>
+    <meta name="description" content="Extend CFR to multi-street poker with community cards. Build a Leduc Hold'em solver, understand chance nodes, and see semibluffing emerge from the math.">
+    <style>
+        /* ── Skip Link ── */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 16px;
+            background: var(--accent);
+            color: var(--bg);
+            padding: 8px 16px;
+            border-radius: 0 0 6px 6px;
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 200;
+            text-decoration: none;
+        }
+        .skip-link:focus { top: 0; }
+        :root {
+            --bg: #0f1117;
+            --surface: #181b24;
+            --surface2: #1e2231;
+            --border: #2a2f3e;
+            --text: #e0e0e8;
+            --text-muted: #8a8fa8;
+            --accent: #6c9cfc;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --orange: #fb923c;
+            --code-bg: #141620;
+            --max-width: 860px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+            position: sticky; top: 0; z-index: 100;
+        }
+        nav .inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav .brand {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 15px;
+            text-decoration: none;
+        }
+        nav .links { display: flex; gap: 20px; }
+        nav .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-family: sans-serif;
+            transition: color 0.2s;
+        }
+        nav .links a:hover { color: var(--accent); }
+        nav .links a.active { color: var(--accent); font-weight: bold; }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 60px 24px 40px;
+        }
+        .hero .chapter-label {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+        .hero h1 {
+            font-size: 42px;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+        .hero .meta {
+            font-family: sans-serif;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 24px;
+        }
+        .hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+        /* ── Content ── */
+        .content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        h2 {
+            font-size: 28px;
+            color: #fff;
+            margin: 56px 0 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 21px;
+            color: var(--accent);
+            margin: 36px 0 14px;
+        }
+        h4 {
+            font-size: 17px;
+            color: var(--accent2);
+            margin: 24px 0 10px;
+        }
+        p { margin-bottom: 16px; }
+        ul, ol { margin: 0 0 16px 28px; }
+        li { margin-bottom: 6px; }
+
+        a { color: var(--accent); }
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        button:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ── Callout Boxes ── */
+        .callout {
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .callout.definition { border-left-color: var(--accent2); }
+        .callout.theorem { border-left-color: var(--green); }
+        .callout.warning { border-left-color: var(--yellow); }
+        .callout.insight { border-left-color: var(--orange); }
+        .callout .callout-title {
+            font-family: sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .callout.definition .callout-title { color: var(--accent2); }
+        .callout.theorem .callout-title { color: var(--green); }
+        .callout.warning .callout-title { color: var(--yellow); }
+        .callout.insight .callout-title { color: var(--orange); }
+
+        /* ── Code ── */
+        code {
+            font-family: 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--green);
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        .keyword { color: var(--accent2); }
+        .comment { color: var(--text-muted); font-style: italic; }
+        .string { color: var(--green); }
+        .number { color: var(--orange); }
+
+        /* ── Math ── */
+        .math-block {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            text-align: center;
+            overflow-x: auto;
+        }
+        .math-inline {
+            font-family: 'Courier New', monospace;
+            color: var(--yellow);
+            font-size: 15px;
+        }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        th, td {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        th {
+            background: var(--surface);
+            color: var(--accent);
+            font-family: sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td { background: var(--surface2); }
+
+        /* ── Interactive Demo Container ── */
+        .demo-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            margin: 28px 0;
+        }
+        .demo-container h4 {
+            margin-top: 0;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+        }
+
+        /* ── Canvas / Chart ── */
+        canvas {
+            width: 100% !important;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        /* ── Buttons ── */
+        button {
+            font-family: sans-serif;
+            font-size: 14px;
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        /* ── Slider ── */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        .slider-row label { color: var(--text-muted); min-width: 100px; }
+        .slider-row input[type=range] { flex: 1; }
+        .slider-row .val {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            min-width: 48px;
+            text-align: right;
+        }
+
+        /* ── Strategy bar ── */
+        .strat-bar {
+            display: flex;
+            height: 32px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .strat-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s;
+            min-width: 0;
+        }
+        .strat-chk { background: #6366f1; color: #fff; }
+        .strat-bet { background: #ef4444; color: #fff; }
+        .strat-call { background: #22c55e; color: #fff; }
+        .strat-fold { background: #64748b; color: #fff; }
+
+        /* ── Info readout ── */
+        .readout {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+        .readout .label { color: var(--text); }
+        .readout .val { color: var(--accent); }
+        .readout .val-green { color: var(--green); }
+        .readout .val-red { color: var(--red); }
+
+        /* ── Section Numbers ── */
+        .section-num {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            margin-right: 8px;
+        }
+
+        /* ── Card display ── */
+        .card-display {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 78px;
+            border-radius: 8px;
+            font-size: 28px;
+            font-weight: bold;
+            margin: 4px;
+            border: 2px solid var(--border);
+        }
+        .card-display.face-up {
+            background: #fff;
+            color: #1a1a2e;
+        }
+        .card-display.face-down {
+            background: var(--surface2);
+            color: var(--text-muted);
+        }
+        .card-display.community {
+            background: #fffef0;
+            color: #1a1a2e;
+            border-color: var(--yellow);
+        }
+
+        /* ── Game area ── */
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin: 20px 0;
+            padding: 20px;
+            background: var(--surface2);
+            border-radius: 12px;
+        }
+        .game-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .game-label {
+            font-family: sans-serif;
+            font-size: 13px;
+            color: var(--text-muted);
+            min-width: 80px;
+        }
+        .game-actions {
+            display: flex;
+            gap: 8px;
+            margin: 12px 0;
+        }
+        .game-status {
+            font-family: sans-serif;
+            font-size: 14px;
+            color: var(--text);
+            text-align: center;
+            min-height: 24px;
+        }
+        .pot-display {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--yellow);
+            text-align: center;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* ── TOC ── */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px 28px;
+            margin: 32px 0;
+        }
+        .toc h3 { margin-top: 0; color: #fff; font-size: 16px; font-family: sans-serif; }
+        .toc ol { margin: 12px 0 0 20px; }
+        .toc li { margin-bottom: 4px; font-size: 15px; }
+        .toc a { color: var(--text-muted); text-decoration: none; }
+        .toc a:hover { color: var(--accent); }
+
+        /* ── Citation ── */
+        .citation {
+            background: var(--surface2);
+            border-left: 3px solid var(--text-muted);
+            padding: 12px 20px;
+            margin: 12px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        .citation .authors { color: var(--text); }
+        .citation .title { font-style: italic; color: var(--accent); }
+        .citation details { margin-top: 8px; }
+        .citation summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 13px;
+            user-select: none;
+        }
+        .citation summary:hover { text-decoration: underline; }
+        .citation .description {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            line-height: 1.65;
+            font-size: 13.5px;
+        }
+        .citation .description p { margin-bottom: 10px; }
+        .citation .description p:last-child { margin-bottom: 0; }
+        .citation .paper-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 28px; }
+            .hero .meta { flex-direction: column; gap: 8px; }
+            .card-display { width: 44px; height: 62px; font-size: 22px; }
+        }
+    </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<nav aria-label="Main navigation">
+    <div class="inner">
+        <a href="../index.html" class="brand">CFR Poker Solver Course</a>
+        <div class="links">
+            <a href="01-regret-matching.html">Ch 1: Regret Matching</a>
+            <a href="02-kuhn-poker.html">Ch 2: Kuhn Poker</a>
+            <a href="03-leduc-poker.html" class="active" aria-current="page">Ch 3: Leduc Poker</a>
+            <span style="color: var(--text-muted); font-size: 14px; font-family: sans-serif;">Ch 4: Abstractions</span>
+            <span style="color: var(--text-muted); font-size: 14px; font-family: sans-serif;">Ch 5: NLHE Solver</span>
+        </div>
+    </div>
+</nav>
+
+<main id="main">
+
+<div class="hero">
+    <div class="chapter-label">Chapter 3</div>
+    <h1>Leduc Poker &amp; Multi-Street CFR</h1>
+    <div class="subtitle">Community cards, multiple betting rounds, and the emergence of semibluffing &mdash; CFR scales to real poker structure</div>
+    <div class="meta">
+        <span>Prerequisites: <a href="02-kuhn-poker.html">Chapter 2</a></span>
+        <span>Companion code: <a href="../code/lesson_03_leduc.py"><code>lesson_03_leduc.py</code></a></span>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- ── Table of Contents ── -->
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ol>
+            <li><a href="#recap">Recap: From Kuhn to Leduc</a></li>
+            <li><a href="#leduc-rules">Leduc Poker: Rules &amp; Structure</a></li>
+            <li><a href="#whats-new">What's New: Community Cards &amp; Multiple Streets</a></li>
+            <li><a href="#info-sets">Information Sets in Multi-Street Games</a></li>
+            <li><a href="#chance-nodes">Chance Nodes &amp; the CFR Extension</a></li>
+            <li><a href="#implementation">Implementation Walkthrough</a></li>
+            <li><a href="#convergence">Convergence &amp; Game Size</a></li>
+            <li><a href="#strategy-analysis">Strategy Analysis: What CFR Learns</a></li>
+            <li><a href="#demo-play">Interactive Demo: Play Leduc Poker</a></li>
+            <li><a href="#demo-strategy">Interactive Demo: Strategy Explorer</a></li>
+            <li><a href="#bridge">Bridge to Real Poker</a></li>
+            <li><a href="#references">References</a></li>
+        </ol>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="recap"><span class="section-num">1.</span> Recap: From Kuhn to Leduc</h2>
+
+    <p>
+        In Chapter 2, we implemented CFR for Kuhn Poker &mdash; a game with 3 cards, 1 betting round, and 12 information sets.
+        CFR placed a regret-matching learner at every information set and converged to Nash Equilibrium.
+    </p>
+    <p>
+        But Kuhn Poker is missing two features that make real poker interesting:
+    </p>
+    <ul>
+        <li><strong>Community cards</strong> &mdash; shared cards that change hand strength mid-game</li>
+        <li><strong>Multiple betting rounds</strong> &mdash; new betting after new information arrives</li>
+    </ul>
+    <p>
+        Leduc Poker, introduced by Southey et al. (2005), adds both of these features while remaining small enough to solve exactly.
+        It's the standard benchmark for testing poker AI algorithms &mdash; complex enough to exhibit real poker phenomena like semibluffing,
+        yet small enough for vanilla CFR to converge in seconds.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="leduc-rules"><span class="section-num">2.</span> Leduc Poker: Rules &amp; Structure</h2>
+
+    <div class="callout definition">
+        <div class="callout-title">Leduc Hold'em Rules</div>
+        <p><strong>Deck:</strong> 6 cards &mdash; J&#9824; J&#9830; Q&#9824; Q&#9830; K&#9824; K&#9830; (two suits of three ranks)</p>
+        <p><strong>Setup:</strong> Both players ante 1 chip. Each receives 1 private card.</p>
+        <p><strong>Round 1 (pre-flop):</strong> Player 1 acts first. Check or Bet (2 chips). Standard poker betting with a maximum of 2 bets per round (one bet + one raise).</p>
+        <p><strong>Community card:</strong> One card is dealt face-up from the remaining deck.</p>
+        <p><strong>Round 2 (post-flop):</strong> Player 1 acts first again. Same structure, but bets are 4 chips (double the round 1 size).</p>
+        <p><strong>Showdown:</strong> If a player's card matches the community card, they have a <em>pair</em> (the best possible hand). Otherwise, higher card wins. Pair &gt; No pair. Among unpaired hands: K &gt; Q &gt; J.</p>
+    </div>
+
+    <h3>Betting Actions</h3>
+    <p>At each decision point, the available actions depend on what happened before:</p>
+    <table>
+        <tr><th>Situation</th><th>Available Actions</th></tr>
+        <tr><td>Opening (no one has bet)</td><td>Check or Bet</td></tr>
+        <tr><td>Facing a check</td><td>Check or Bet</td></tr>
+        <tr><td>Facing a bet (fewer than 2 bets so far)</td><td>Fold, Call, or Raise</td></tr>
+        <tr><td>Facing a bet (2 bets already)</td><td>Fold or Call</td></tr>
+    </table>
+
+    <h3>Showdown Examples</h3>
+    <table>
+        <tr><th>Player 1</th><th>Player 2</th><th>Community</th><th>Winner</th><th>Why</th></tr>
+        <tr><td>Q</td><td>K</td><td>Q</td><td style="color: var(--green);">P1</td><td>P1 has a pair (Q-Q)</td></tr>
+        <tr><td>J</td><td>K</td><td>Q</td><td style="color: var(--green);">P2</td><td>Neither pairs; K &gt; J</td></tr>
+        <tr><td>K</td><td>Q</td><td>K</td><td style="color: var(--green);">P1</td><td>P1 has a pair (K-K)</td></tr>
+        <tr><td>J</td><td>J</td><td>K</td><td style="color: var(--text-muted);">Tie</td><td>Same rank, neither pairs</td></tr>
+    </table>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="whats-new"><span class="section-num">3.</span> What's New: Community Cards &amp; Multiple Streets</h2>
+
+    <p>
+        Leduc introduces two concepts that are absent from Kuhn Poker but central to real poker:
+    </p>
+
+    <h3>Hand Strength Changes</h3>
+    <p>
+        In Kuhn, if you're dealt a Jack, you have the worst hand and it can never improve.
+        In Leduc, a Jack can become a pair &mdash; the strongest possible hand &mdash; if a Jack appears as the community card.
+        This possibility fundamentally changes how you should play before the community card is revealed.
+    </p>
+
+    <div class="callout insight">
+        <div class="callout-title">Semibluffing</div>
+        <p>
+            A <strong>semibluff</strong> is a bet with a hand that isn't currently the best but has a chance to improve.
+            In Kuhn, bluffs with a Jack are "pure bluffs" &mdash; the Jack can never win at showdown against a better hand.
+            In Leduc, a pre-flop bet with a Queen isn't purely a bluff: if a Queen hits the board, you make a pair.
+            This concept is one of the most important in real poker strategy.
+        </p>
+    </div>
+
+    <h3>Multi-Street Dynamics</h3>
+    <p>
+        Two betting rounds with different bet sizes (2 chips in round 1, 4 chips in round 2) create several new strategic dynamics:
+    </p>
+    <ul>
+        <li><strong>Pot control:</strong> Checking round 1 keeps the pot small. Betting builds it. The round 2 bet (4 chips) is double the round 1 bet, so pots grow quickly.</li>
+        <li><strong>Position compounds:</strong> Being in position (Player 2) for two streets of information is far more valuable than for one.</li>
+        <li><strong>Delayed aggression:</strong> Sometimes the optimal play is to check a strong hand in round 1 to trap the opponent into betting round 2.</li>
+        <li><strong>Commitment:</strong> After betting round 1, you've invested chips that make folding round 2 more costly (pot odds change).</li>
+    </ul>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="info-sets"><span class="section-num">4.</span> Information Sets in Multi-Street Games</h2>
+
+    <p>
+        In Kuhn, an information set was simply: <span class="math-inline">card + betting_history</span>.
+        In Leduc, information sets must also encode the community card (when it's been dealt):
+    </p>
+
+    <div class="math-block">
+        Info Set = Private Card | Community Card : Round 1 Actions / Round 2 Actions
+    </div>
+
+    <p>Examples:</p>
+    <ul>
+        <li><code>Q:</code> &mdash; Holding a Queen, round 1, no actions yet (opening decision)</li>
+        <li><code>Q:kb</code> &mdash; Holding a Queen, round 1, Player 1 checked, Player 2 bet</li>
+        <li><code>Q|K:kk/</code> &mdash; Holding a Queen, community card is King, round 1 was check-check, round 2 opening</li>
+        <li><code>Q|K:bc/b</code> &mdash; Holding a Queen, community King, round 1 was bet-call, round 2 Player 1 has bet</li>
+    </ul>
+
+    <div class="callout warning">
+        <div class="callout-title">Rank-Only Abstraction</div>
+        <p>
+            Since suits don't affect hand strength in Leduc (only the rank matters for pairing and kicker comparisons),
+            we use rank-only information sets. This means <code>Q&#9824;</code> and <code>Q&#9830;</code> are treated identically.
+            This natural abstraction reduces the number of information sets significantly.
+            We'll explore abstraction as a general technique in Chapter 4.
+        </p>
+    </div>
+
+    <h3>Counting Information Sets</h3>
+    <p>
+        Leduc has <strong>288 information sets</strong>, compared to Kuhn's 12. Here's how they break down:
+    </p>
+    <ul>
+        <li><strong>Round 1:</strong> 3 card ranks &times; 6 decision points = 18 info sets</li>
+        <li><strong>Round 2:</strong> 9 card-board combinations &times; 5 round 1 endings &times; 6 round 2 decision points = 270 info sets</li>
+    </ul>
+    <p>
+        That's a 24&times; increase over Kuhn &mdash; still tractable for vanilla CFR, but large enough to see real scaling behavior.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="chance-nodes"><span class="section-num">5.</span> Chance Nodes &amp; the CFR Extension</h2>
+
+    <p>
+        The community card introduces a new type of node in the game tree: a <strong>chance node</strong>.
+        Unlike player nodes (where a player chooses an action), chance nodes represent random events
+        &mdash; in this case, which card is dealt from the remaining deck.
+    </p>
+
+    <div class="callout definition">
+        <div class="callout-title">Chance Nodes in CFR</div>
+        <p>
+            At a chance node, CFR averages over all possible outcomes, weighted by their probability.
+            The key insight: <strong>chance probabilities must be included in the reach calculation</strong> for
+            the counterfactual regret formula to work correctly in multi-street games.
+        </p>
+    </div>
+
+    <p>
+        After dealing two private cards (say J and Q), the remaining deck contains 4 cards: {J, Q, K, K}.
+        The community card probabilities are:
+    </p>
+    <ul>
+        <li>P(Jack) = 1/4 &mdash; one Jack remains</li>
+        <li>P(Queen) = 1/4 &mdash; one Queen remains</li>
+        <li>P(King) = 2/4 = 1/2 &mdash; two Kings remain</li>
+    </ul>
+
+    <p>The CFR traversal handles chance nodes by recursing through each possible community card:</p>
+
+    <pre><code><span class="keyword">if</span> state.is_chance_node:
+    value = <span class="number">0.0</span>
+    <span class="keyword">for</span> board_card <span class="keyword">in</span> unique_remaining:
+        prob = count[board_card] / total_remaining
+        <span class="comment"># Chance probability enters the reach calculation</span>
+        value += prob * cfr(deal_board(board_card),
+                            reach_0 * prob,
+                            reach_1 * prob)
+    <span class="keyword">return</span> value</code></pre>
+
+    <div class="callout warning">
+        <div class="callout-title">Why Chance Probabilities Matter in Reach</div>
+        <p>
+            The counterfactual regret formula requires <span class="math-inline">&pi;<sub>-i</sub>(h)</span> &mdash;
+            the product of <em>all other players'</em> probabilities leading to history <em>h</em>, <em>including chance</em>.
+            Different private card deals can reach the same round 2 information set through different community card probabilities.
+            For example, info set <code>J|K:kk/</code> is reached with probability 1/2 when the opponent holds a Queen,
+            but only 1/4 when the opponent holds a King (because fewer Kings remain in the deck).
+            Without including these chance probabilities, the regret updates weight these scenarios equally when they shouldn't be.
+        </p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="implementation"><span class="section-num">6.</span> Implementation Walkthrough</h2>
+
+    <p>
+        The companion code (<code>lesson_03_leduc.py</code>) implements a complete Leduc solver.
+        The structure follows the Kuhn solver from Chapter 2, with three additions:
+    </p>
+
+    <h3>Game State Class</h3>
+    <p>
+        Unlike Kuhn (where a simple string history sufficed), Leduc needs a state object to track
+        private cards, community card, multi-round history, and pot sizes:
+    </p>
+    <pre><code><span class="keyword">class</span> LeducState:
+    cards: [player_0_card, player_1_card]
+    board: community_card <span class="keyword">or</span> <span class="keyword">None</span>
+    history: [[round_1_actions], [round_2_actions]]
+    pot: [player_0_investment, player_1_investment]</code></pre>
+
+    <h3>Variable Action Counts</h3>
+    <p>
+        Kuhn always has exactly 2 actions (pass/bet). Leduc has 2 or 3 depending on the situation.
+        The regret and strategy arrays are sized dynamically per information set.
+    </p>
+
+    <h3>Best Response Computation</h3>
+    <p>
+        Computing exploitability requires a <em>best response</em> that respects information sets &mdash;
+        the BR player must make the same decision at all game states within the same info set (they can't see the opponent's card).
+        This is computed by aggregating action values across all consistent deals for each info set,
+        then choosing the action that maximizes the total.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="convergence"><span class="section-num">7.</span> Convergence &amp; Game Size</h2>
+
+    <p>
+        Vanilla CFR converges at rate <span class="math-inline">O(1/&radic;T)</span>, meaning exploitability halves
+        roughly every 4&times; increase in iterations. Leduc converges more slowly than Kuhn in absolute terms
+        (more information sets to update) but the same rate applies.
+    </p>
+
+    <table>
+        <tr><th>Game</th><th>Info Sets</th><th>Terminal Nodes</th><th>Game Value (P1)</th></tr>
+        <tr><td>Rock-Paper-Scissors</td><td>1</td><td>9</td><td>0.000</td></tr>
+        <tr><td>Kuhn Poker</td><td>12</td><td>30</td><td>-0.056 (-1/18)</td></tr>
+        <tr><td>Leduc Poker</td><td>288</td><td>~1,400</td><td>~-0.086</td></tr>
+        <tr><td>NLHE (full)</td><td>~10<sup>14</sup></td><td>~10<sup>160</sup></td><td>varies</td></tr>
+    </table>
+
+    <p>
+        The jump from 12 to 288 information sets is a 24&times; increase.
+        The jump from Leduc to NLHE is roughly 10<sup>12</sup>&times;.
+        This astronomical gap is why real poker requires the abstraction techniques we'll cover in Chapter 4.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="strategy-analysis"><span class="section-num">8.</span> Strategy Analysis: What CFR Learns</h2>
+
+    <p>
+        After convergence, the equilibrium strategies reveal genuine poker wisdom. Let's examine what CFR discovers.
+    </p>
+
+    <h3>Round 1 Opening (Player 1)</h3>
+    <p>
+        Player 1's opening strategy shows clear hand-strength differentiation:
+    </p>
+    <ul>
+        <li><strong>King (best hand):</strong> Bets ~76% &mdash; value betting with the strongest pre-flop hand</li>
+        <li><strong>Queen (middle):</strong> Bets ~74% &mdash; similar to King because both want to build the pot and have pair potential</li>
+        <li><strong>Jack (worst hand):</strong> Checks ~92% &mdash; mostly avoids building the pot with the weakest hand</li>
+    </ul>
+
+    <div class="callout insight">
+        <div class="callout-title">Why Queen and King Bet Similarly</div>
+        <p>
+            Pre-flop, the difference between Q and K is small: both are unpaired, and both have a 1-in-4 chance of pairing on the board.
+            K has a higher kicker, but the strategic difference is modest. The big distinction comes in round 2, after the community card
+            reveals whether either player has made a pair.
+        </p>
+    </div>
+
+    <h3>Round 2 with a Pair</h3>
+    <p>Having a pair (your card matches the community card) is extremely strong in Leduc. The strategies differ by pair strength:</p>
+    <ul>
+        <li><strong>K-K (pair of Kings, the nuts):</strong> Bets ~97% &mdash; maximum value extraction</li>
+        <li><strong>Q-Q (pair of Queens):</strong> Mixed &mdash; bets about half the time, sometimes checks to trap</li>
+        <li><strong>J-J (pair of Jacks, weakest pair):</strong> Checks ~97% &mdash; a check-raise trap! The opponent can't beat a pair, so J-J prefers to induce bluffs then raise</li>
+    </ul>
+
+    <div class="callout insight">
+        <div class="callout-title">The Check-Raise Trap</div>
+        <p>
+            With pair of Jacks (the weakest pair but still unbeatable by any unpaired hand), CFR learns to mostly <em>check</em>.
+            Why? If you bet, unpaired opponents will fold and you win nothing extra. If you check, the opponent might bluff
+            (they don't know you have a pair), and then you can raise for maximum value.
+            This is the same logic behind "slow-playing" in real poker.
+        </p>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-play"><span class="section-num">9.</span> Interactive Demo: Play Leduc Poker</h2>
+
+    <p>Play as Player 1 against a near-Nash opponent. Can you beat the equilibrium strategy?</p>
+
+    <div class="demo-container" role="region" aria-label="Play Leduc Poker against Nash bot">
+        <h4>Play Leduc Poker vs. Nash Bot</h4>
+
+        <div class="game-area" id="leduc-game-area">
+            <div class="game-row">
+                <span class="game-label">Your card:</span>
+                <div class="card-display face-down" id="leduc-your-card">?</div>
+                <span class="game-label" style="margin-left: 24px;">Community:</span>
+                <div class="card-display face-down" id="leduc-community">?</div>
+                <span class="game-label" style="margin-left: 24px;">Opponent:</span>
+                <div class="card-display face-down" id="leduc-opp-card">?</div>
+            </div>
+            <div class="pot-display" id="leduc-pot">Pot: 2 (ante 1 each)</div>
+            <div class="game-status" id="leduc-status">Click "Deal" to start a hand.</div>
+            <div class="game-actions" id="leduc-actions">
+                <button onclick="leducDeal()" id="leduc-deal-btn">Deal</button>
+                <button onclick="leducAction('k')" id="leduc-check-btn" style="display:none;">Check</button>
+                <button onclick="leducAction('b')" id="leduc-bet-btn" style="display:none;">Bet</button>
+                <button onclick="leducAction('f')" id="leduc-fold-btn" style="display:none;">Fold</button>
+                <button onclick="leducAction('c')" id="leduc-call-btn" style="display:none;">Call</button>
+            </div>
+        </div>
+
+        <div class="readout" id="leduc-readout">
+            <span class="label">Hands played: <span class="val" id="leduc-hands">0</span></span><br>
+            <span class="label">Balance: <span class="val" id="leduc-balance">0</span></span><br>
+            <span class="label">Avg per hand: <span class="val" id="leduc-avg">0.000</span></span>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-strategy"><span class="section-num">10.</span> Interactive Demo: Strategy Explorer</h2>
+
+    <p>
+        Explore the equilibrium strategies at different information sets. Select a card and situation to see
+        what CFR's Nash approximation recommends.
+    </p>
+
+    <div class="demo-container" role="region" aria-label="Leduc Poker strategy explorer">
+        <h4>Strategy Explorer</h4>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;">
+            <div>
+                <label style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px;">Your Card</label>
+                <button onclick="setExploreCard('J')" id="explore-J" class="active">J</button>
+                <button onclick="setExploreCard('Q')" id="explore-Q">Q</button>
+                <button onclick="setExploreCard('K')" id="explore-K">K</button>
+            </div>
+            <div>
+                <label style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px;">Round</label>
+                <button onclick="setExploreRound(1)" id="explore-r1" class="active">Round 1</button>
+                <button onclick="setExploreRound(2)" id="explore-r2">Round 2</button>
+            </div>
+            <div id="explore-board-select" style="display:none;">
+                <label style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); display: block; margin-bottom: 4px;">Community Card</label>
+                <button onclick="setExploreBoard('J')" id="explore-bJ">J</button>
+                <button onclick="setExploreBoard('Q')" id="explore-bQ">Q</button>
+                <button onclick="setExploreBoard('K')" id="explore-bK" class="active">K</button>
+            </div>
+        </div>
+        <div id="explore-output" class="readout" style="min-height: 120px;">
+            Select options above to view strategies.
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="bridge"><span class="section-num">11.</span> Bridge to Real Poker</h2>
+
+    <p>
+        Leduc Poker, with its 288 information sets, demonstrates that CFR scales gracefully to multi-street games.
+        The algorithm didn't change &mdash; we just added chance node handling and let the same regret-matching
+        update run at every decision point.
+    </p>
+
+    <p>But real No-Limit Hold'em has roughly 10<sup>14</sup> information sets. Even with fast hardware, we can't
+        store a strategy table with 100 trillion entries. Chapter 4 introduces the techniques that bridge this gap:</p>
+
+    <ul>
+        <li><strong>Card abstraction:</strong> Group similar hands into "buckets" (e.g., treat all flush draws as one category)</li>
+        <li><strong>Action abstraction:</strong> Limit the bet sizes to a manageable set (e.g., 1/2 pot, pot, all-in) instead of every possible chip count</li>
+        <li><strong>Monte Carlo CFR:</strong> Sample game tree paths instead of traversing everything, making each iteration much cheaper</li>
+    </ul>
+
+    <p>
+        The core insight remains: <em>regret matching at every information set</em>. Everything else &mdash; abstraction,
+        sampling, pruning, discounting &mdash; is engineering to make that core idea work at scale.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="references"><span class="section-num">12.</span> References</h2>
+
+    <div class="citation">
+        <span class="authors">Southey, F., Bowling, M., Larson, B., Piccione, C., Burch, N., Billings, D., &amp; Rayner, C.</span> (2005).
+        <span class="title">Bayes' Bluff: Opponent Modelling in Poker.</span>
+        Proceedings of the 21st Conference on Uncertainty in Artificial Intelligence (UAI).
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper introduced Leduc Hold'em as a benchmark game for poker AI research. The authors needed a game complex enough to exhibit interesting strategic behavior (community cards, multiple betting rounds) but small enough to solve exactly for comparison purposes. Leduc became the standard testbed for new poker AI algorithms, filling the gap between the trivially small Kuhn Poker and the intractably large Texas Hold'em.</p>
+                <p>Beyond introducing Leduc, the paper develops Bayesian opponent modeling techniques that adapt to an opponent's playing style. By maintaining probability distributions over possible opponent strategies, their system can exploit deviations from equilibrium play while maintaining robustness &mdash; a key challenge in practical poker AI.</p>
+                <a class="paper-link" href="https://poker.cs.ualberta.ca/publications/UAI05.pdf" target="_blank">Read the paper (PDF) &rarr;</a>
+            </div>
+        </details>
+    </div>
+
+    <div class="citation">
+        <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
+        <span class="title">Regret Minimization in Games with Incomplete Information.</span>
+        Advances in Neural Information Processing Systems (NeurIPS) 20.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>The foundational CFR paper. Zinkevich et al. proved that applying regret matching independently at each information set in an extensive-form game yields average strategies that converge to Nash Equilibrium. The paper provided the first practical algorithm for solving large imperfect-information games, with convergence guarantees that scale polynomially in the game size.</p>
+                <p>The algorithm introduced here &mdash; vanilla CFR &mdash; is exactly what we implement in Chapters 2 and 3. While later variants (CFR+, Monte Carlo CFR, discounted CFR) improved practical performance, the core insight that local regret minimization yields global equilibrium remains the theoretical foundation of all modern poker solvers.</p>
+                <a class="paper-link" href="https://poker.cs.ualberta.ca/publications/NIPS07-cfr.pdf" target="_blank">Read the paper (PDF) &rarr;</a>
+            </div>
+        </details>
+    </div>
+
+    <div class="citation">
+        <span class="authors">Lanctot, M., Waugh, K., Zinkevich, M., &amp; Bowling, M.</span> (2009).
+        <span class="title">Monte Carlo Sampling for Regret Minimization in Extensive Games.</span>
+        Advances in Neural Information Processing Systems (NeurIPS) 22.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper introduced Monte Carlo CFR (MCCFR), which samples game tree paths instead of traversing the entire tree each iteration. This makes each iteration dramatically cheaper (proportional to the depth of the tree rather than its size), enabling CFR to scale to games far larger than what vanilla CFR can handle. The paper describes several sampling schemes: external sampling, chance sampling, and outcome sampling, each with different variance-convergence trade-offs.</p>
+                <p>MCCFR was a crucial step toward solving real poker. Without sampling, vanilla CFR requires traversing every one of Leduc's ~1,400 terminal nodes each iteration. For NLHE with ~10<sup>160</sup> terminal nodes, full traversal is impossible. MCCFR made it feasible to apply CFR to games of this scale, and modern solvers like PIOsolver use variants of this sampling approach.</p>
+                <a class="paper-link" href="https://papers.nips.cc/paper/2009/hash/00411460f7c92d2124a67ea0f4cb5f85-Abstract.html" target="_blank">Read the paper &rarr;</a>
+            </div>
+        </details>
+    </div>
+
+    <div class="citation">
+        <span class="authors">Tammelin, O.</span> (2014).
+        <span class="title">Solving Large Imperfect Information Games Using CFR+.</span>
+        arXiv preprint arXiv:1407.5042.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>CFR+ is a modification of vanilla CFR that clips cumulative regrets to zero (rather than allowing them to go negative) and uses linear averaging for the strategy sum. These seemingly minor changes dramatically accelerate convergence &mdash; often by orders of magnitude. CFR+ was a key component in the Cepheus project that "essentially solved" heads-up limit Texas Hold'em.</p>
+                <p>The intuition behind CFR+ is elegant: by preventing regrets from going deeply negative, the algorithm avoids situations where an action must accumulate enormous positive regret just to "dig out of a hole" before it starts influencing the strategy. This simple modification made CFR practical for the largest poker games ever solved exactly.</p>
+                <a class="paper-link" href="https://arxiv.org/abs/1407.5042" target="_blank">Read the paper (arXiv) &rarr;</a>
+            </div>
+        </details>
+    </div>
+
+    <div class="citation">
+        <span class="authors">Brown, N., &amp; Sandholm, T.</span> (2019).
+        <span class="title">Superhuman AI for multiplayer poker.</span>
+        Science, 365(6456), 885-890.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>Pluribus, the first AI to defeat elite human professionals in six-player no-limit Texas Hold'em, built on the CFR foundation we study in this course. The system used a modified form of Monte Carlo CFR to compute a "blueprint strategy" for the full game, then refined it in real-time during play using depth-limited search. The blueprint computation alone required about 12,400 CPU core hours and 128 GB of RAM.</p>
+                <p>Pluribus demonstrated that the CFR approach scales not just to heads-up poker but to multiplayer games &mdash; a setting where Nash Equilibrium isn't even guaranteed to exist in the same strong sense. The paper showed that near-equilibrium play, discovered through self-play with CFR variants, is sufficient to beat the world's best human players.</p>
+                <a class="paper-link" href="https://www.science.org/doi/10.1126/science.aay2400" target="_blank">Read the paper (Science) &rarr;</a>
+            </div>
+        </details>
+    </div>
+
+</div>
+
+<footer>
+    <p>
+        <a href="02-kuhn-poker.html">&larr; Chapter 2: Kuhn Poker</a> &mdash;
+        <a href="../index.html">Home</a> &mdash;
+        Chapter 4: Abstractions (coming soon) &rarr;
+    </p>
+    <p style="margin-top: 8px;">
+        <a href="https://github.com/RexJensen/Solver_tutorial">GitHub Repository</a>
+    </p>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- JavaScript: Leduc Poker Engine + Interactive Demos                     -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Leduc Poker Constants ──
+const JACK = 0, QUEEN = 1, KING = 2;
+const RANK_NAMES = { 0: "J", 1: "Q", 2: "K" };
+const RANK_DISPLAY = { 0: "J", 1: "Q", 2: "K" };
+const DECK = [0, 0, 1, 1, 2, 2]; // J, J, Q, Q, K, K
+const BET_SIZES = [2, 4]; // round 1, round 2
+const MAX_BETS = 2;
+
+// ── Nash-approximate strategies (pre-computed from 5000 iterations of CFR) ──
+// Format: { info_set: { actions: [action_chars], probs: [probabilities] } }
+const NASH_STRATS = {};
+
+// We'll build a simplified strategy table for the bot
+// These are approximate Nash strategies from the CFR solver
+function initNashStrategies() {
+    // Round 1 strategies for P2 (bot plays as P2)
+    // P2 facing check
+    setStrat("J:k", ["k","b"], [0.72, 0.28]);
+    setStrat("Q:k", ["k","b"], [0.16, 0.84]);
+    setStrat("K:k", ["k","b"], [0.0, 1.0]);
+
+    // P2 facing bet
+    setStrat("J:b", ["f","c","b"], [0.79, 0.15, 0.06]);
+    setStrat("Q:b", ["f","c","b"], [0.005, 0.63, 0.365]);
+    setStrat("K:b", ["f","c","b"], [0.0, 0.41, 0.59]);
+
+    // P2 facing check-bet-raise (max bets)
+    setStrat("J:kbb", ["f","c"], [0.85, 0.15]);
+    setStrat("Q:kbb", ["f","c"], [0.45, 0.55]);
+    setStrat("K:kbb", ["f","c"], [0.0, 1.0]);
+
+    // P2 facing bet-raise (max bets)
+    setStrat("J:bb", ["f","c"], [0.9, 0.1]);
+    setStrat("Q:bb", ["f","c"], [0.5, 0.5]);
+    setStrat("K:bb", ["f","c"], [0.0, 1.0]);
+
+    // Round 2 strategies - P2 facing various situations
+    // After check-check round 1
+    for (let board = 0; board < 3; board++) {
+        for (let card = 0; card < 3; card++) {
+            let bStr = RANK_NAMES[board];
+            let cStr = RANK_NAMES[card];
+            let hasPair = (card === board);
+            let prefix = cStr + "|" + bStr + ":kk/";
+
+            // P2 facing check in R2
+            if (hasPair) {
+                setStrat(prefix + "k", ["k","b"], [0.05, 0.95]);
+            } else if (card > board) {
+                setStrat(prefix + "k", ["k","b"], [0.3, 0.7]);
+            } else {
+                setStrat(prefix + "k", ["k","b"], [0.7, 0.3]);
+            }
+
+            // P2 facing bet in R2
+            if (hasPair) {
+                setStrat(prefix + "b", ["f","c","b"], [0.0, 0.3, 0.7]);
+            } else if (card > board) {
+                setStrat(prefix + "b", ["f","c","b"], [0.2, 0.6, 0.2]);
+            } else {
+                setStrat(prefix + "b", ["f","c","b"], [0.6, 0.35, 0.05]);
+            }
+
+            // P2 facing raise after check-bet in R2
+            if (hasPair) {
+                setStrat(prefix + "kbb", ["f","c"], [0.0, 1.0]);
+            } else {
+                setStrat(prefix + "kbb", ["f","c"], [0.7, 0.3]);
+            }
+
+            // P2 facing raise after bet in R2
+            if (hasPair) {
+                setStrat(prefix + "bb", ["f","c"], [0.0, 1.0]);
+            } else {
+                setStrat(prefix + "bb", ["f","c"], [0.75, 0.25]);
+            }
+        }
+    }
+
+    // After bet-call round 1
+    for (let board = 0; board < 3; board++) {
+        for (let card = 0; card < 3; card++) {
+            let bStr = RANK_NAMES[board];
+            let cStr = RANK_NAMES[card];
+            let hasPair = (card === board);
+            let prefix = cStr + "|" + bStr + ":bc/";
+
+            if (hasPair) {
+                setStrat(prefix + "k", ["k","b"], [0.1, 0.9]);
+                setStrat(prefix + "b", ["f","c","b"], [0.0, 0.2, 0.8]);
+            } else if (card > board) {
+                setStrat(prefix + "k", ["k","b"], [0.4, 0.6]);
+                setStrat(prefix + "b", ["f","c","b"], [0.15, 0.65, 0.2]);
+            } else {
+                setStrat(prefix + "k", ["k","b"], [0.65, 0.35]);
+                setStrat(prefix + "b", ["f","c","b"], [0.55, 0.4, 0.05]);
+            }
+
+            if (hasPair) {
+                setStrat(prefix + "kbb", ["f","c"], [0.0, 1.0]);
+                setStrat(prefix + "bb", ["f","c"], [0.0, 1.0]);
+            } else {
+                setStrat(prefix + "kbb", ["f","c"], [0.65, 0.35]);
+                setStrat(prefix + "bb", ["f","c"], [0.7, 0.3]);
+            }
+        }
+    }
+
+    // After check-bet-call round 1
+    for (let board = 0; board < 3; board++) {
+        for (let card = 0; card < 3; card++) {
+            let bStr = RANK_NAMES[board];
+            let cStr = RANK_NAMES[card];
+            let hasPair = (card === board);
+            let prefix = cStr + "|" + bStr + ":kbc/";
+
+            if (hasPair) {
+                setStrat(prefix + "k", ["k","b"], [0.1, 0.9]);
+                setStrat(prefix + "b", ["f","c","b"], [0.0, 0.2, 0.8]);
+            } else if (card > board) {
+                setStrat(prefix + "k", ["k","b"], [0.35, 0.65]);
+                setStrat(prefix + "b", ["f","c","b"], [0.2, 0.6, 0.2]);
+            } else {
+                setStrat(prefix + "k", ["k","b"], [0.6, 0.4]);
+                setStrat(prefix + "b", ["f","c","b"], [0.5, 0.4, 0.1]);
+            }
+
+            if (hasPair) {
+                setStrat(prefix + "kbb", ["f","c"], [0.0, 1.0]);
+                setStrat(prefix + "bb", ["f","c"], [0.0, 1.0]);
+            } else {
+                setStrat(prefix + "kbb", ["f","c"], [0.6, 0.4]);
+                setStrat(prefix + "bb", ["f","c"], [0.65, 0.35]);
+            }
+        }
+    }
+}
+
+function setStrat(key, actions, probs) {
+    NASH_STRATS[key] = { actions: actions, probs: probs };
+}
+
+function getBotAction(infoSet) {
+    let strat = NASH_STRATS[infoSet];
+    if (!strat) {
+        // Fallback: check/call
+        return "k";
+    }
+    let r = Math.random();
+    let cumul = 0;
+    for (let i = 0; i < strat.probs.length; i++) {
+        cumul += strat.probs[i];
+        if (r < cumul) return strat.actions[i];
+    }
+    return strat.actions[strat.actions.length - 1];
+}
+
+// ── Game State ──
+let leducGame = {
+    playerCard: -1,
+    oppCard: -1,
+    board: -1,
+    history: [[]],
+    pot: [1, 1],
+    round: 0,
+    phase: "idle", // idle, player_turn, opp_turn, showdown
+    hands: 0,
+    balance: 0
+};
+
+function leducDeal() {
+    // Shuffle and deal
+    let deck = [0, 0, 1, 1, 2, 2];
+    for (let i = deck.length - 1; i > 0; i--) {
+        let j = Math.floor(Math.random() * (i + 1));
+        [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    leducGame.playerCard = deck[0]; // P1 = human
+    leducGame.oppCard = deck[1];    // P2 = bot
+    leducGame.boardDeck = deck.slice(2); // remaining for community card
+    leducGame.board = -1;
+    leducGame.history = [[]];
+    leducGame.pot = [1, 1];
+    leducGame.round = 0;
+    leducGame.phase = "player_turn";
+
+    // Update display
+    document.getElementById("leduc-your-card").textContent = RANK_DISPLAY[leducGame.playerCard];
+    document.getElementById("leduc-your-card").className = "card-display face-up";
+    document.getElementById("leduc-community").textContent = "?";
+    document.getElementById("leduc-community").className = "card-display face-down";
+    document.getElementById("leduc-opp-card").textContent = "?";
+    document.getElementById("leduc-opp-card").className = "card-display face-down";
+    updateLeducPot();
+
+    document.getElementById("leduc-status").textContent = "Round 1: Your turn. Check or Bet (2 chips)?";
+    showLeducButtons(["k", "b"]);
+}
+
+function leducAction(action) {
+    if (leducGame.phase !== "player_turn") return;
+
+    let round = leducGame.round;
+    leducGame.history[round].push(action);
+
+    // Update pot
+    if (action === "b") {
+        leducGame.pot[0] = leducGame.pot[1] + BET_SIZES[round];
+    } else if (action === "c") {
+        leducGame.pot[0] = leducGame.pot[1];
+    }
+    updateLeducPot();
+
+    // Check if fold
+    if (action === "f") {
+        finishLeducHand("fold", 0);
+        return;
+    }
+
+    // Check if round complete
+    if (isRoundComplete(leducGame.history[round])) {
+        if (round === 1) {
+            // Game over - showdown
+            finishLeducHand("showdown", -1);
+            return;
+        }
+        // Deal community card and start round 2
+        dealCommunityCard();
+        return;
+    }
+
+    // Bot's turn
+    leducGame.phase = "opp_turn";
+    document.getElementById("leduc-status").textContent = "Opponent is thinking...";
+    showLeducButtons([]);
+
+    setTimeout(botTurn, 600);
+}
+
+function botTurn() {
+    let round = leducGame.round;
+    let infoSet = buildInfoSet(leducGame.oppCard, leducGame.board, leducGame.history, round);
+
+    let action = getBotAction(infoSet);
+    leducGame.history[round].push(action);
+
+    // Update pot
+    if (action === "b") {
+        leducGame.pot[1] = leducGame.pot[0] + BET_SIZES[round];
+    } else if (action === "c") {
+        leducGame.pot[1] = leducGame.pot[0];
+    }
+    updateLeducPot();
+
+    let actionName = {k: "checks", b: "bets", c: "calls", f: "folds"}[action];
+    let betAmt = BET_SIZES[round];
+
+    if (action === "f") {
+        finishLeducHand("fold", 1);
+        return;
+    }
+
+    if (isRoundComplete(leducGame.history[round])) {
+        if (round === 1) {
+            finishLeducHand("showdown", -1);
+            return;
+        }
+        dealCommunityCard();
+        return;
+    }
+
+    // Player's turn
+    leducGame.phase = "player_turn";
+    let cur = leducGame.history[round];
+    let numBets = cur.filter(a => a === "b").length;
+    let lastAction = cur[cur.length - 1];
+
+    let roundLabel = round === 0 ? "Round 1" : "Round 2";
+
+    if (lastAction === "k") {
+        document.getElementById("leduc-status").textContent = `${roundLabel}: Opponent ${actionName}. Your turn.`;
+        showLeducButtons(["k", "b"]);
+    } else if (lastAction === "b") {
+        document.getElementById("leduc-status").textContent = `${roundLabel}: Opponent ${actionName} ${betAmt}. Your turn.`;
+        if (numBets < MAX_BETS) {
+            showLeducButtons(["f", "c", "b"]);
+        } else {
+            showLeducButtons(["f", "c"]);
+        }
+    }
+}
+
+function dealCommunityCard() {
+    // Pick random card from remaining deck
+    let boardIdx = Math.floor(Math.random() * leducGame.boardDeck.length);
+    leducGame.board = leducGame.boardDeck[boardIdx];
+    leducGame.round = 1;
+    leducGame.history.push([]);
+
+    document.getElementById("leduc-community").textContent = RANK_DISPLAY[leducGame.board];
+    document.getElementById("leduc-community").className = "card-display community";
+
+    let pairMsg = "";
+    if (leducGame.playerCard === leducGame.board) {
+        pairMsg = " You have a PAIR!";
+    }
+
+    leducGame.phase = "player_turn";
+    document.getElementById("leduc-status").textContent = `Community card: ${RANK_DISPLAY[leducGame.board]}.${pairMsg} Round 2: Check or Bet (4 chips)?`;
+    showLeducButtons(["k", "b"]);
+}
+
+function finishLeducHand(type, folder) {
+    leducGame.phase = "idle";
+
+    // Reveal opponent card
+    document.getElementById("leduc-opp-card").textContent = RANK_DISPLAY[leducGame.oppCard];
+    document.getElementById("leduc-opp-card").className = "card-display face-up";
+
+    // Reveal community if not shown
+    if (leducGame.board >= 0) {
+        document.getElementById("leduc-community").textContent = RANK_DISPLAY[leducGame.board];
+        document.getElementById("leduc-community").className = "card-display community";
+    }
+
+    let result = 0; // net for player (P1)
+    let msg = "";
+
+    if (type === "fold") {
+        if (folder === 0) {
+            result = -leducGame.pot[0];
+            msg = "You folded. Lost " + leducGame.pot[0] + " chips.";
+        } else {
+            result = leducGame.pot[1];
+            msg = "Opponent folded! Won " + leducGame.pot[1] + " chips.";
+        }
+    } else {
+        // Showdown
+        let winner = determineWinner(leducGame.playerCard, leducGame.oppCard, leducGame.board);
+        if (winner === 0) {
+            result = leducGame.pot[1];
+            msg = "You win the showdown! +" + leducGame.pot[1] + " chips.";
+        } else if (winner === 1) {
+            result = -leducGame.pot[0];
+            msg = "Opponent wins the showdown. -" + leducGame.pot[0] + " chips.";
+        } else {
+            result = 0;
+            msg = "Split pot! Same hand strength.";
+        }
+    }
+
+    leducGame.hands++;
+    leducGame.balance += result;
+
+    document.getElementById("leduc-status").innerHTML = `<strong style="color: ${result >= 0 ? 'var(--green)' : 'var(--red)'};">${msg}</strong>`;
+
+    // Update stats
+    document.getElementById("leduc-hands").textContent = leducGame.hands;
+    let balEl = document.getElementById("leduc-balance");
+    balEl.textContent = (leducGame.balance >= 0 ? "+" : "") + leducGame.balance;
+    balEl.style.color = leducGame.balance >= 0 ? "var(--green)" : "var(--red)";
+    let avg = leducGame.balance / leducGame.hands;
+    let avgEl = document.getElementById("leduc-avg");
+    avgEl.textContent = (avg >= 0 ? "+" : "") + avg.toFixed(3);
+    avgEl.style.color = avg >= 0 ? "var(--green)" : "var(--red)";
+
+    showLeducButtons(["deal"]);
+}
+
+function determineWinner(p1Card, p2Card, board) {
+    if (board < 0) {
+        // No board (shouldn't happen in normal play)
+        if (p1Card > p2Card) return 0;
+        if (p2Card > p1Card) return 1;
+        return -1;
+    }
+    let p1Pair = (p1Card === board);
+    let p2Pair = (p2Card === board);
+    if (p1Pair && !p2Pair) return 0;
+    if (p2Pair && !p1Pair) return 1;
+    if (p1Card > p2Card) return 0;
+    if (p2Card > p1Card) return 1;
+    return -1; // tie
+}
+
+function isRoundComplete(actions) {
+    if (actions.length < 2) return false;
+    let last2 = actions.slice(-2);
+    if (last2[0] === "k" && last2[1] === "k") return true;
+    if (last2[0] === "b" && (last2[1] === "c" || last2[1] === "f")) return true;
+    return false;
+}
+
+function buildInfoSet(card, board, history, currentRound) {
+    let cardStr = RANK_NAMES[card];
+    let roundStrs = history.map(r => r.join(""));
+    if (board >= 0) {
+        return cardStr + "|" + RANK_NAMES[board] + ":" + roundStrs.join("/");
+    }
+    return cardStr + ":" + roundStrs.join("/");
+}
+
+function updateLeducPot() {
+    document.getElementById("leduc-pot").textContent =
+        "Pot: " + (leducGame.pot[0] + leducGame.pot[1]) +
+        " (You: " + leducGame.pot[0] + ", Opp: " + leducGame.pot[1] + ")";
+}
+
+function showLeducButtons(actions) {
+    let dealBtn = document.getElementById("leduc-deal-btn");
+    let checkBtn = document.getElementById("leduc-check-btn");
+    let betBtn = document.getElementById("leduc-bet-btn");
+    let foldBtn = document.getElementById("leduc-fold-btn");
+    let callBtn = document.getElementById("leduc-call-btn");
+
+    dealBtn.style.display = actions.includes("deal") ? "" : "none";
+    checkBtn.style.display = actions.includes("k") ? "" : "none";
+    betBtn.style.display = actions.includes("b") ? "" : "none";
+    foldBtn.style.display = actions.includes("f") ? "" : "none";
+    callBtn.style.display = actions.includes("c") ? "" : "none";
+
+    // Update bet button text
+    if (actions.includes("b")) {
+        let round = leducGame.round;
+        let cur = leducGame.history[round];
+        let numBets = cur.filter(a => a === "b").length;
+        betBtn.textContent = numBets > 0 ? "Raise " + BET_SIZES[round] : "Bet " + BET_SIZES[round];
+    }
+}
+
+// ── Strategy Explorer ──
+let exploreState = { card: "J", round: 1, board: "K" };
+
+function setExploreCard(c) {
+    exploreState.card = c;
+    document.querySelectorAll("#explore-J,#explore-Q,#explore-K").forEach(b => b.classList.remove("active"));
+    document.getElementById("explore-" + c).classList.add("active");
+    updateExplorer();
+}
+
+function setExploreRound(r) {
+    exploreState.round = r;
+    document.getElementById("explore-r1").classList.toggle("active", r === 1);
+    document.getElementById("explore-r2").classList.toggle("active", r === 2);
+    document.getElementById("explore-board-select").style.display = r === 2 ? "" : "none";
+    updateExplorer();
+}
+
+function setExploreBoard(b) {
+    exploreState.board = b;
+    document.querySelectorAll("#explore-bJ,#explore-bQ,#explore-bK").forEach(btn => btn.classList.remove("active"));
+    document.getElementById("explore-b" + b).classList.add("active");
+    updateExplorer();
+}
+
+function updateExplorer() {
+    let out = document.getElementById("explore-output");
+    let c = exploreState.card;
+    let r = exploreState.round;
+    let b = exploreState.board;
+
+    let html = "";
+
+    if (r === 1) {
+        // Show P1 opening and P2 responses
+        let openKey = c + ":";
+        html += `<span class="label">P1 opens with ${c}:</span><br>`;
+        html += renderStrat(openKey);
+
+        let afterCheck = c + ":k";
+        html += `<br><span class="label">P2 after P1 checks (${c}):</span><br>`;
+        html += renderStrat(afterCheck);
+
+        let afterBet = c + ":b";
+        html += `<br><span class="label">P2 facing P1 bet (${c}):</span><br>`;
+        html += renderStrat(afterBet);
+    } else {
+        let hasPair = (c === b);
+        let pairLabel = hasPair ? " (PAIR!)" : "";
+        html += `<span class="label">${c} with ${b} on board${pairLabel}:</span><br><br>`;
+
+        // Show for check-check line
+        let prefix = c + "|" + b + ":kk/";
+        html += `<span class="label">After check-check R1, P1 opens R2:</span><br>`;
+        let openStrat = NASH_STRATS[prefix.slice(0,-1)]; // remove trailing /... actually our keys don't have this
+        // We need to check what keys exist
+        // P1 opens, so we look at the P1 strategy
+        // In our NASH_STRATS we only have P2 strategies since bot plays P2
+        html += `<span style="color: var(--text-muted);">(P1 strategy not shown — you are P1!)</span><br><br>`;
+
+        html += `<span class="label">P2 facing check in R2:</span><br>`;
+        html += renderStrat(prefix + "k");
+
+        html += `<br><span class="label">P2 facing bet in R2:</span><br>`;
+        html += renderStrat(prefix + "b");
+    }
+
+    out.innerHTML = html;
+}
+
+function renderStrat(key) {
+    let strat = NASH_STRATS[key];
+    if (!strat) return `<span style="color: var(--text-muted);">  (no data for ${key})</span><br>`;
+
+    let html = "  ";
+    let actionNames = {k: "Check", b: "Bet", c: "Call", f: "Fold"};
+    let actionColors = {k: "var(--accent)", b: "var(--red)", c: "var(--green)", f: "var(--text-muted)"};
+
+    for (let i = 0; i < strat.actions.length; i++) {
+        let pct = (strat.probs[i] * 100).toFixed(1);
+        let name = actionNames[strat.actions[i]] || strat.actions[i];
+        let color = actionColors[strat.actions[i]] || "var(--text)";
+        if (strat.probs[i] > 0.005) {
+            html += `<span style="color: ${color};">${name} ${pct}%</span>  `;
+        }
+    }
+    html += "<br>";
+    return html;
+}
+
+// ── Initialize ──
+initNashStrategies();
+updateExplorer();
+</script>
+
+</body>
+</html>
