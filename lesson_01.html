@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 1: Regret Matching &amp; Nash Equilibrium | CFR Poker Solver Course</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #181b24;
+            --surface2: #1e2231;
+            --border: #2a2f3e;
+            --text: #e0e0e8;
+            --text-muted: #8a8fa8;
+            --accent: #6c9cfc;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --orange: #fb923c;
+            --code-bg: #141620;
+            --max-width: 860px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+            position: sticky; top: 0; z-index: 100;
+        }
+        nav .inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav .brand {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 15px;
+            text-decoration: none;
+        }
+        nav .links { display: flex; gap: 20px; }
+        nav .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-family: sans-serif;
+            transition: color 0.2s;
+        }
+        nav .links a:hover { color: var(--accent); }
+        nav .links a.active { color: var(--accent); font-weight: bold; }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 60px 24px 40px;
+        }
+        .hero .chapter-label {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+        .hero h1 {
+            font-size: 42px;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+        .hero .meta {
+            font-family: sans-serif;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 24px;
+        }
+        .hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+        /* ── Content ── */
+        .content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        h2 {
+            font-size: 28px;
+            color: #fff;
+            margin: 56px 0 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 21px;
+            color: var(--accent);
+            margin: 36px 0 14px;
+        }
+        h4 {
+            font-size: 17px;
+            color: var(--accent2);
+            margin: 24px 0 10px;
+        }
+        p { margin-bottom: 16px; }
+        ul, ol { margin: 0 0 16px 28px; }
+        li { margin-bottom: 6px; }
+
+        a { color: var(--accent); }
+
+        /* ── Callout Boxes ── */
+        .callout {
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .callout.definition { border-left-color: var(--accent2); }
+        .callout.theorem { border-left-color: var(--green); }
+        .callout.warning { border-left-color: var(--yellow); }
+        .callout.insight { border-left-color: var(--orange); }
+        .callout .callout-title {
+            font-family: sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .callout.definition .callout-title { color: var(--accent2); }
+        .callout.theorem .callout-title { color: var(--green); }
+        .callout.warning .callout-title { color: var(--yellow); }
+        .callout.insight .callout-title { color: var(--orange); }
+
+        /* ── Code ── */
+        code {
+            font-family: 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--green);
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        .keyword { color: var(--accent2); }
+        .comment { color: var(--text-muted); font-style: italic; }
+        .string { color: var(--green); }
+        .number { color: var(--orange); }
+
+        /* ── Math ── */
+        .math-block {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            text-align: center;
+            overflow-x: auto;
+        }
+        .math-inline {
+            font-family: 'Courier New', monospace;
+            color: var(--yellow);
+            font-size: 15px;
+        }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        th, td {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        th {
+            background: var(--surface);
+            color: var(--accent);
+            font-family: sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td { background: var(--surface2); }
+        td.positive { color: var(--green); font-weight: bold; }
+        td.negative { color: var(--red); font-weight: bold; }
+        td.zero { color: var(--text-muted); }
+
+        /* ── Interactive Demo Container ── */
+        .demo-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            margin: 28px 0;
+        }
+        .demo-container h4 {
+            margin-top: 0;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+        }
+
+        /* ── Canvas / Chart ── */
+        canvas {
+            width: 100% !important;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        /* ── Buttons ── */
+        button {
+            font-family: sans-serif;
+            font-size: 14px;
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        /* ── Slider ── */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        .slider-row label { color: var(--text-muted); min-width: 100px; }
+        .slider-row input[type=range] { flex: 1; }
+        .slider-row .val {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            min-width: 48px;
+            text-align: right;
+        }
+
+        /* ── Strategy bar ── */
+        .strat-bar {
+            display: flex;
+            height: 32px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .strat-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s;
+            min-width: 0;
+        }
+        .strat-rock { background: #ef4444; color: #fff; }
+        .strat-paper { background: #3b82f6; color: #fff; }
+        .strat-scissors { background: #f59e0b; color: #000; }
+
+        /* ── Info readout ── */
+        .readout {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+        .readout .label { color: var(--text); }
+        .readout .val { color: var(--accent); }
+        .readout .val-green { color: var(--green); }
+        .readout .val-red { color: var(--red); }
+
+        /* ── Payoff Matrix Visual ── */
+        .payoff-grid {
+            display: grid;
+            grid-template-columns: auto repeat(3, 1fr);
+            gap: 2px;
+            max-width: 400px;
+            margin: 16px auto;
+        }
+        .payoff-grid .cell {
+            display: flex; align-items: center; justify-content: center;
+            padding: 14px 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+        .payoff-grid .header {
+            background: var(--surface);
+            color: var(--accent);
+            font-size: 13px;
+            font-family: sans-serif;
+            text-transform: uppercase;
+        }
+        .payoff-grid .row-header {
+            background: var(--surface);
+            color: var(--accent2);
+            font-size: 13px;
+            font-family: sans-serif;
+            text-transform: uppercase;
+        }
+        .payoff-grid .win { background: #166534; color: var(--green); }
+        .payoff-grid .lose { background: #7f1d1d; color: var(--red); }
+        .payoff-grid .draw { background: var(--surface2); color: var(--text-muted); }
+
+        /* ── Regret Table Visual ── */
+        .regret-table-vis {
+            width: 100%;
+            margin: 16px 0;
+        }
+        .regret-table-vis td, .regret-table-vis th {
+            font-family: 'Courier New', monospace;
+        }
+
+        /* ── Section Numbers ── */
+        .section-num {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            margin-right: 8px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* ── TOC ── */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px 28px;
+            margin: 32px 0;
+        }
+        .toc h3 { margin-top: 0; color: #fff; font-size: 16px; font-family: sans-serif; }
+        .toc ol { margin: 12px 0 0 20px; }
+        .toc li { margin-bottom: 4px; font-size: 15px; }
+        .toc a { color: var(--text-muted); text-decoration: none; }
+        .toc a:hover { color: var(--accent); }
+
+        /* ── Citation ── */
+        .citation {
+            background: var(--surface2);
+            border-left: 3px solid var(--text-muted);
+            padding: 12px 20px;
+            margin: 12px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        .citation .authors { color: var(--text); }
+        .citation .title { font-style: italic; color: var(--accent); }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 28px; }
+            .hero .meta { flex-direction: column; gap: 8px; }
+            .payoff-grid { max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="inner">
+        <a href="#" class="brand">CFR Poker Solver Course</a>
+        <div class="links">
+            <a href="#" class="active">Ch 1: Regret Matching</a>
+            <a href="#">Ch 2: Kuhn Poker</a>
+            <a href="#">Ch 3: Leduc Poker</a>
+            <a href="#">Ch 4: Abstractions</a>
+            <a href="#">Ch 5: NLHE Solver</a>
+        </div>
+    </div>
+</nav>
+
+<div class="hero">
+    <div class="chapter-label">Chapter 1</div>
+    <h1>Regret Matching &amp; Nash Equilibrium</h1>
+    <div class="subtitle">The atomic algorithm inside every poker solver, understood through Rock-Paper-Scissors</div>
+    <div class="meta">
+        <span>Prerequisites: Basic probability, linear algebra</span>
+        <span>Companion code: <code>lesson_01_rps.py</code></span>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- ── Table of Contents ── -->
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ol>
+            <li><a href="#motivation">Motivation: What Do Poker Solvers Actually Do?</a></li>
+            <li><a href="#normal-form">Normal-Form Games &amp; the Payoff Matrix</a></li>
+            <li><a href="#strategies">Pure vs. Mixed Strategies</a></li>
+            <li><a href="#nash">Nash Equilibrium &amp; the Minimax Theorem</a></li>
+            <li><a href="#regret">Regret: The Key Concept</a></li>
+            <li><a href="#regret-matching">The Regret Matching Algorithm</a></li>
+            <li><a href="#convergence">Convergence Guarantees</a></li>
+            <li><a href="#exploitability">Exploitability: Measuring Distance from Nash</a></li>
+            <li><a href="#demo-convergence">Interactive Demo: Convergence in Self-Play</a></li>
+            <li><a href="#demo-exploit">Interactive Demo: Exploiting a Fixed Opponent</a></li>
+            <li><a href="#bridge">Bridge to Poker: From Normal-Form to Extensive-Form</a></li>
+            <li><a href="#references">References &amp; Further Reading</a></li>
+        </ol>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="motivation"><span class="section-num">1.</span> Motivation: What Do Poker Solvers Actually Do?</h2>
+
+    <p>
+        Tools like PIOsolver and GTO Wizard have transformed competitive poker. At their core, they
+        compute <strong>Nash Equilibrium strategies</strong> — strategy profiles where neither player
+        can improve their expected value by unilaterally deviating. A player following a Nash Equilibrium
+        strategy is guaranteed to not lose in expectation, no matter what the opponent does.
+    </p>
+    <p>
+        But how do you <em>find</em> a Nash Equilibrium in a game as complex as No-Limit Hold'em,
+        which has on the order of 10<sup>160</sup> game states? The answer is a family of algorithms
+        built on a single, elegant primitive: <strong>regret matching</strong>.
+    </p>
+    <p>
+        This chapter develops regret matching from first principles using Rock-Paper-Scissors — a game
+        simple enough to verify by hand, yet rich enough to illustrate every concept we'll need.
+        By the end of this chapter, you will understand the exact mechanism that poker solvers use
+        at every decision point in the game tree.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="normal-form"><span class="section-num">2.</span> Normal-Form Games &amp; the Payoff Matrix</h2>
+
+    <p>
+        A <strong>normal-form game</strong> (also called a strategic-form game) is defined by:
+    </p>
+    <ol>
+        <li>A finite set of <strong>players</strong> (here, 2)</li>
+        <li>A finite set of <strong>actions</strong> for each player</li>
+        <li>A <strong>utility function</strong> mapping each action profile to a real-valued payoff for each player</li>
+    </ol>
+    <p>
+        In Rock-Paper-Scissors, both players simultaneously choose one of three actions:
+        Rock (R), Paper (P), or Scissors (S). The payoffs from <strong>Player 1's</strong> perspective
+        are given by the following matrix:
+    </p>
+
+    <div class="payoff-grid">
+        <div class="cell"></div>
+        <div class="cell header">Rock</div>
+        <div class="cell header">Paper</div>
+        <div class="cell header">Scissors</div>
+
+        <div class="cell row-header">Rock</div>
+        <div class="cell draw">0</div>
+        <div class="cell lose">-1</div>
+        <div class="cell win">+1</div>
+
+        <div class="cell row-header">Paper</div>
+        <div class="cell win">+1</div>
+        <div class="cell draw">0</div>
+        <div class="cell lose">-1</div>
+
+        <div class="cell row-header">Scissors</div>
+        <div class="cell lose">-1</div>
+        <div class="cell win">+1</div>
+        <div class="cell draw">0</div>
+    </div>
+    <p style="text-align: center; font-size: 14px; color: var(--text-muted); font-family: sans-serif; margin-top: -8px;">
+        Rows = Player 1's action &nbsp;|&nbsp; Columns = Player 2's action &nbsp;|&nbsp; Cell = Player 1's payoff
+    </p>
+
+    <p>
+        RPS is a <strong>two-player zero-sum game</strong>: Player 2's payoff is always the negative
+        of Player 1's. This zero-sum property is critical — it guarantees that Nash Equilibria exist
+        and can be computed via linear programming (or, as we'll see, regret matching).
+    </p>
+
+    <div class="callout insight">
+        <div class="callout-title">Why Zero-Sum Matters for Poker</div>
+        Poker (in its standard formulation, ignoring rake) is a two-player zero-sum game: every chip
+        one player wins, the other loses. This is precisely the class of games where the minimax theorem
+        applies and where CFR-based algorithms are guaranteed to converge. Games with more than two players,
+        or non-zero-sum games, do <strong>not</strong> have the same guarantees — which is why "GTO" for
+        multi-way pots is a much more nuanced concept.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="strategies"><span class="section-num">3.</span> Pure vs. Mixed Strategies</h2>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Pure Strategy</div>
+        A <strong>pure strategy</strong> is a deterministic choice of a single action.
+        In RPS, "always play Rock" is a pure strategy.
+    </div>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Mixed Strategy</div>
+        A <strong>mixed strategy</strong> is a probability distribution over actions.
+        In RPS, a mixed strategy is a vector <span class="math-inline">σ = [σ_R, σ_P, σ_S]</span>
+        where <span class="math-inline">σ_R + σ_P + σ_S = 1</span> and each <span class="math-inline">σ_i ≥ 0</span>.
+        <br><br>
+        Example: <span class="math-inline">σ = [0.4, 0.35, 0.25]</span> means play Rock 40% of the time,
+        Paper 35%, and Scissors 25%.
+    </div>
+
+    <p>
+        Every pure strategy is a special case of a mixed strategy (e.g., "always Rock"
+        = <span class="math-inline">[1, 0, 0]</span>). The set of all mixed strategies is a
+        <strong>simplex</strong> — a triangle in the case of three actions.
+    </p>
+
+    <h3>Expected Value Under Mixed Strategies</h3>
+    <p>
+        When Player 1 plays mixed strategy <span class="math-inline">σ</span> and Player 2 plays
+        mixed strategy <span class="math-inline">τ</span>, Player 1's expected value is:
+    </p>
+    <div class="math-block">
+        EV(σ, τ) = σᵀ · A · τ = Σᵢ Σⱼ σᵢ · Aᵢⱼ · τⱼ
+    </div>
+    <p>
+        where <span class="math-inline">A</span> is the payoff matrix. For example, if Player 1 plays
+        <span class="math-inline">[0.5, 0.5, 0]</span> (50/50 Rock/Paper) and Player 2 plays
+        <span class="math-inline">[1, 0, 0]</span> (always Rock):
+    </p>
+    <div class="math-block">
+        EV = 0.5·(0) + 0.5·(+1) + 0·(-1) = +0.5
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="nash"><span class="section-num">4.</span> Nash Equilibrium &amp; the Minimax Theorem</h2>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Nash Equilibrium</div>
+        A strategy profile <span class="math-inline">(σ*, τ*)</span> is a <strong>Nash Equilibrium</strong>
+        if neither player can improve their expected value by unilaterally changing their strategy:
+        <br><br>
+        <span class="math-inline">EV(σ*, τ*) ≥ EV(σ, τ*)</span> &nbsp; for all strategies σ of Player 1<br>
+        <span class="math-inline">EV(σ*, τ*) ≤ EV(σ*, τ)</span> &nbsp; for all strategies τ of Player 2
+        <br><br>
+        (The second inequality is flipped because Player 2 is minimizing in a zero-sum game.)
+    </div>
+
+    <p>
+        John Nash proved in 1950 that every finite game has at least one Nash Equilibrium
+        (possibly in mixed strategies). For RPS, the unique Nash Equilibrium is:
+    </p>
+    <div class="math-block">
+        σ* = τ* = [1/3, 1/3, 1/3]
+    </div>
+    <p>
+        Against this strategy, every action yields expected value 0. No deviation can improve on this —
+        you can verify by computing the EV of each pure action against <span class="math-inline">[1/3, 1/3, 1/3]</span>:
+    </p>
+    <div class="math-block">
+        EV(Rock) &nbsp;= 0·(1/3) + (-1)·(1/3) + (+1)·(1/3) = 0<br>
+        EV(Paper) = (+1)·(1/3) + 0·(1/3) + (-1)·(1/3) = 0<br>
+        EV(Scissors) = (-1)·(1/3) + (+1)·(1/3) + 0·(1/3) = 0
+    </div>
+
+    <div class="callout theorem">
+        <div class="callout-title">Theorem: Von Neumann's Minimax Theorem (1928)</div>
+        In any finite two-player zero-sum game, the maximin value equals the minimax value:
+        <br><br>
+        <div class="math-block">
+            max_σ min_τ σᵀAτ = min_τ max_σ σᵀAτ = v*
+        </div>
+        This common value <span class="math-inline">v*</span> is the <strong>value of the game</strong>.
+        In RPS, <span class="math-inline">v* = 0</span> (the game is fair).
+        <br><br>
+        The minimax theorem guarantees that Nash Equilibria exist in all two-player zero-sum games and
+        can be computed. This is the theoretical foundation upon which all poker solvers rest: heads-up
+        poker is a two-player zero-sum game, so its Nash Equilibrium is guaranteed to exist and is computable.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Von Neumann, J.</span> (1928).
+        <span class="title">Zur Theorie der Gesellschaftsspiele.</span>
+        Mathematische Annalen, 100(1), 295–320.
+    </div>
+    <div class="citation">
+        <span class="authors">Nash, J.</span> (1950).
+        <span class="title">Equilibrium points in n-person games.</span>
+        Proceedings of the National Academy of Sciences, 36(1), 48–49.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="regret"><span class="section-num">5.</span> Regret: The Key Concept</h2>
+
+    <p>
+        Now we arrive at the central concept. Intuitively, <em>regret</em> for an action answers:
+        "How much better would I have done if I had always played this action instead of
+        what I actually played?"
+    </p>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Instantaneous Regret</div>
+        Given that we played strategy <span class="math-inline">σ</span> against opponent strategy
+        <span class="math-inline">τ</span>, the <strong>instantaneous regret</strong> for action
+        <span class="math-inline">a</span> is:
+        <br><br>
+        <div class="math-block">
+            r(a) = EV(a, τ) − EV(σ, τ)
+        </div>
+        where <span class="math-inline">EV(a, τ) = Σⱼ A[a,j] · τⱼ</span> is the expected value
+        of the pure strategy that always plays <span class="math-inline">a</span>.
+    </div>
+
+    <p>
+        Regret can be positive (we would have done better) or negative (we would have done worse).
+        If our strategy is already optimal against the opponent, all regrets are zero.
+    </p>
+
+    <h3>Worked Example</h3>
+    <p>
+        Suppose we play <span class="math-inline">σ = [0.5, 0.3, 0.2]</span> and the opponent plays
+        <span class="math-inline">τ = [0.7, 0.2, 0.1]</span>.
+    </p>
+
+    <p><strong>Step 1: Compute EV of each pure action against τ:</strong></p>
+    <div class="math-block">
+        EV(Rock) &nbsp;&nbsp;= 0(0.7) + (−1)(0.2) + (+1)(0.1) = −0.1<br>
+        EV(Paper) &nbsp;= (+1)(0.7) + 0(0.2) + (−1)(0.1) = +0.6<br>
+        EV(Scissors) = (−1)(0.7) + (+1)(0.2) + 0(0.1) = −0.5
+    </div>
+
+    <p><strong>Step 2: Compute EV of our mixed strategy:</strong></p>
+    <div class="math-block">
+        EV(σ, τ) = 0.5(−0.1) + 0.3(+0.6) + 0.2(−0.5) = −0.05 + 0.18 − 0.10 = +0.03
+    </div>
+
+    <p><strong>Step 3: Compute regrets:</strong></p>
+    <div class="math-block">
+        r(Rock) &nbsp;&nbsp;= −0.1 − 0.03 = −0.13 &nbsp; (would have done <em>worse</em>)<br>
+        r(Paper) &nbsp;= +0.6 − 0.03 = +0.57 &nbsp; (would have done <em>much better</em>)<br>
+        r(Scissors) = −0.5 − 0.03 = −0.53 &nbsp; (would have done <em>worse</em>)
+    </div>
+
+    <p>
+        The only positive regret is for Paper — which makes sense, since the opponent heavily favors Rock.
+        Regret matching will increase our probability of playing Paper next iteration.
+    </p>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Cumulative Regret</div>
+        After <span class="math-inline">T</span> iterations, the <strong>cumulative regret</strong>
+        for action <span class="math-inline">a</span> is:
+        <br><br>
+        <div class="math-block">
+            R<sup>T</sup>(a) = Σ<sub>t=1..T</sub> r<sup>t</sup>(a)
+        </div>
+        This running total is the only state the algorithm needs to maintain.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="regret-matching"><span class="section-num">6.</span> The Regret Matching Algorithm</h2>
+
+    <p>
+        Regret matching was introduced by Hart and Mas-Colell (2000) as a simple procedure
+        for learning in games. The algorithm is remarkably simple:
+    </p>
+
+    <div class="callout theorem">
+        <div class="callout-title">Algorithm: Regret Matching</div>
+        <strong>Initialize:</strong> <span class="math-inline">R<sup>0</sup>(a) = 0</span> for all actions
+        <span class="math-inline">a</span>.
+        <br><br>
+        <strong>At each iteration t = 1, 2, 3, ...:</strong>
+        <ol style="margin-top: 10px;">
+            <li>
+                <strong>Compute strategy from regrets:</strong>
+                <div class="math-block" style="text-align: left; margin: 10px 0;">
+                    Let R<sup>+</sup>(a) = max(R<sup>t-1</sup>(a), 0)<br><br>
+                    If Σ_a R<sup>+</sup>(a) > 0:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;σ<sup>t</sup>(a) = R<sup>+</sup>(a) / Σ_a R<sup>+</sup>(a)<br>
+                    Else:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;σ<sup>t</sup>(a) = 1/|A| &nbsp; (uniform)
+                </div>
+            </li>
+            <li><strong>Play</strong> strategy <span class="math-inline">σ<sup>t</sup></span>, observe opponent's strategy <span class="math-inline">τ<sup>t</sup></span>.</li>
+            <li>
+                <strong>Update cumulative regrets:</strong>
+                <div class="math-block" style="text-align: left; margin: 10px 0;">
+                    For each action a:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;R<sup>t</sup>(a) = R<sup>t-1</sup>(a) + [EV(a, τ<sup>t</sup>) − EV(σ<sup>t</sup>, τ<sup>t</sup>)]
+                </div>
+            </li>
+        </ol>
+        <br>
+        <strong>Output:</strong> The <strong>average strategy</strong>
+        <span class="math-inline">σ̄ = (1/T) Σ<sub>t=1..T</sub> σ<sup>t</sup></span>
+    </div>
+
+    <div class="callout warning">
+        <div class="callout-title">Critical Subtlety: Average vs. Current Strategy</div>
+        The <strong>current strategy</strong> <span class="math-inline">σ<sup>t</sup></span> at any given
+        iteration does NOT converge to Nash Equilibrium. It oscillates. What converges is the
+        <strong>average strategy</strong> <span class="math-inline">σ̄</span> across all iterations.
+        <br><br>
+        This is why solvers like PIOsolver report the average strategy as the solution.
+        The distinction is easy to miss but absolutely essential to understand correctly.
+    </div>
+
+    <h3>Implementation</h3>
+    <p>
+        The algorithm requires only two arrays per player, both of size <span class="math-inline">|A|</span>
+        (number of actions):
+    </p>
+    <ul>
+        <li><code>cumulative_regret[a]</code> — the running sum of regrets</li>
+        <li><code>strategy_sum[a]</code> — the running sum of strategies (for computing the average)</li>
+    </ul>
+
+    <pre><code><span class="keyword">def</span> get_strategy(cumulative_regret):
+    <span class="comment"># Clip negative regrets to zero</span>
+    positive = np.maximum(cumulative_regret, <span class="number">0</span>)
+    total = positive.sum()
+
+    <span class="keyword">if</span> total > <span class="number">0</span>:
+        <span class="keyword">return</span> positive / total
+    <span class="keyword">else</span>:
+        <span class="keyword">return</span> np.ones(NUM_ACTIONS) / NUM_ACTIONS
+
+<span class="keyword">def</span> update_regrets(my_strategy, opponent_strategy, cumulative_regret):
+    <span class="comment"># EV of each pure action against opponent</span>
+    action_evs = PAYOFF @ opponent_strategy
+    <span class="comment"># EV of our mixed strategy</span>
+    strategy_ev = my_strategy @ action_evs
+    <span class="comment"># Accumulate regrets</span>
+    cumulative_regret += action_evs - strategy_ev</code></pre>
+
+    <p>
+        Note the separation of concerns: <code>get_strategy</code> is a pure function that converts
+        regrets to a strategy. Strategy accumulation happens separately in the training loop.
+        This avoids the subtle bug of double-accumulating the strategy sum if multiple code paths
+        call <code>get_strategy</code>.
+    </p>
+
+    <div class="citation">
+        <span class="authors">Hart, S., &amp; Mas-Colell, A.</span> (2000).
+        <span class="title">A simple adaptive procedure leading to correlated equilibrium.</span>
+        Econometrica, 68(5), 1127–1150.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="convergence"><span class="section-num">7.</span> Convergence Guarantees</h2>
+
+    <p>
+        Why does regret matching work? The key theoretical result connects cumulative regret
+        to Nash Equilibrium:
+    </p>
+
+    <div class="callout theorem">
+        <div class="callout-title">Theorem: Regret Matching Convergence</div>
+        If both players in a two-player zero-sum game use regret matching, then:
+        <br><br>
+        <div class="math-block">
+            exploitability(σ̄<sup>T</sup>) ≤ Δ · √(|A| / T)
+        </div>
+        where <span class="math-inline">Δ</span> is the range of payoffs, <span class="math-inline">|A|</span>
+        is the number of actions, and <span class="math-inline">T</span> is the number of iterations.
+        <br><br>
+        As <span class="math-inline">T → ∞</span>, the average strategy converges to Nash Equilibrium
+        at rate <span class="math-inline">O(1/√T)</span>.
+    </div>
+
+    <p>
+        This <span class="math-inline">O(1/√T)</span> rate means you need 4x the iterations to halve
+        the exploitability. For RPS with 3 actions and payoffs in [-1, +1]:
+    </p>
+
+    <table>
+        <tr>
+            <th>Iterations</th>
+            <th>Upper Bound on Exploitability</th>
+            <th>Typical Observed</th>
+        </tr>
+        <tr>
+            <td>100</td>
+            <td>0.346</td>
+            <td>~0.10</td>
+        </tr>
+        <tr>
+            <td>1,000</td>
+            <td>0.110</td>
+            <td>~0.03</td>
+        </tr>
+        <tr>
+            <td>10,000</td>
+            <td>0.035</td>
+            <td>~0.01</td>
+        </tr>
+        <tr>
+            <td>100,000</td>
+            <td>0.011</td>
+            <td>~0.002</td>
+        </tr>
+    </table>
+
+    <p>
+        In practice, convergence is often faster than the theoretical worst case. The connection
+        to Blackwell's approachability theorem (1956) provides a deeper understanding of <em>why</em>
+        this works: regret matching can be viewed as a special case of Blackwell's procedure for
+        approaching a convex set in vector-valued payoff space.
+    </p>
+
+    <div class="citation">
+        <span class="authors">Blackwell, D.</span> (1956).
+        <span class="title">An analog of the minimax theorem for vector payoffs.</span>
+        Pacific Journal of Mathematics, 6(1), 1–8.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="exploitability"><span class="section-num">8.</span> Exploitability: Measuring Distance from Nash</h2>
+
+    <p>
+        How do we measure how close a strategy is to Nash Equilibrium? The answer is
+        <strong>exploitability</strong> — the maximum expected value an opponent can achieve
+        by best-responding to our strategy.
+    </p>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Exploitability (Normal-Form)</div>
+        For a strategy <span class="math-inline">σ</span> in a two-player zero-sum normal-form game
+        with payoff matrix <span class="math-inline">A</span>:
+        <br><br>
+        <div class="math-block">
+            exploitability(σ) = max_a EV(a, σ) = max_a [Σⱼ A[a,j] · σⱼ]
+        </div>
+        At Nash Equilibrium, <span class="math-inline">exploitability = 0</span> (in a symmetric
+        zero-sum game like RPS with value 0).
+    </div>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Exploitability (Extensive-Form / Poker)</div>
+        In extensive-form games (like poker), exploitability is typically defined as:
+        <br><br>
+        <div class="math-block">
+            exploitability(σ₁, σ₂) = ½ · [ BR_EV(σ₁) + BR_EV(σ₂) ]
+        </div>
+        where <span class="math-inline">BR_EV(σᵢ)</span> is the expected value that a best-response
+        achieves against player <span class="math-inline">i</span>'s strategy. This is sometimes
+        called <strong>NashConv / 2</strong>.
+        <br><br>
+        Solvers typically report this as a fraction of the pot:
+        "converged to 0.3% of pot" means the exploitability is 0.3% of the pot size.
+    </div>
+
+    <div class="callout insight">
+        <div class="callout-title">Exploitability in Practice</div>
+        Professional poker solver users often set convergence thresholds around 0.1–0.5% of the pot.
+        This means any deviation from the computed strategy can gain at most that fraction of the pot.
+        For most practical purposes, 0.3% pot exploitability is considered "solved." Lower thresholds
+        require exponentially more computation due to the <span class="math-inline">O(1/√T)</span>
+        convergence rate.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-convergence"><span class="section-num">9.</span> Interactive Demo: Convergence in Self-Play</h2>
+
+    <p>
+        This demo runs two regret-matching players against each other, starting from biased
+        initial strategies. Watch how both players' average strategies converge toward
+        <span class="math-inline">[1/3, 1/3, 1/3]</span> and exploitability drops toward 0.
+    </p>
+
+    <div class="demo-container">
+        <h4>Self-Play Convergence</h4>
+
+        <div class="slider-row">
+            <label>P1 Rock bias:</label>
+            <input type="range" id="p1-rock-bias" min="0" max="100" value="80">
+            <span class="val" id="p1-rock-val">0.80</span>
+        </div>
+        <div class="slider-row">
+            <label>P2 Scissors bias:</label>
+            <input type="range" id="p2-scissors-bias" min="0" max="100" value="80">
+            <span class="val" id="p2-scissors-val">0.80</span>
+        </div>
+        <div class="slider-row">
+            <label>Iterations:</label>
+            <input type="range" id="iterations-slider" min="100" max="50000" value="10000" step="100">
+            <span class="val" id="iter-val">10000</span>
+        </div>
+
+        <button id="run-convergence-btn" onclick="runConvergenceDemo()">Run Simulation</button>
+
+        <div style="margin-top: 16px;">
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Player 1 Average Strategy:</div>
+            <div class="strat-bar" id="p1-bar">
+                <div class="strat-rock" style="width: 33.3%">R 33%</div>
+                <div class="strat-paper" style="width: 33.3%">P 33%</div>
+                <div class="strat-scissors" style="width: 33.4%">S 33%</div>
+            </div>
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px; margin-top: 12px;">Player 2 Average Strategy:</div>
+            <div class="strat-bar" id="p2-bar">
+                <div class="strat-rock" style="width: 33.3%">R 33%</div>
+                <div class="strat-paper" style="width: 33.3%">P 33%</div>
+                <div class="strat-scissors" style="width: 33.4%">S 33%</div>
+            </div>
+        </div>
+
+        <canvas id="convergence-chart" height="280"></canvas>
+
+        <div class="readout" id="convergence-readout">
+            Press "Run Simulation" to start.
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-exploit"><span class="section-num">10.</span> Interactive Demo: Exploiting a Fixed Opponent</h2>
+
+    <p>
+        When the opponent plays a fixed (non-adaptive) strategy, regret matching converges to
+        the <strong>best response</strong> — the pure action with the highest EV. This illustrates
+        a crucial concept for poker: against a non-equilibrium opponent, the optimal counter-strategy
+        deviates from Nash. This is the theoretical basis of exploitative play.
+    </p>
+
+    <div class="demo-container">
+        <h4>Best Response to a Fixed Opponent</h4>
+        <p style="font-size: 14px; color: var(--text-muted); font-family: sans-serif;">
+            Set the opponent's fixed strategy and watch regret matching find the best response.
+        </p>
+
+        <div class="slider-row">
+            <label>Opp. Rock:</label>
+            <input type="range" id="opp-rock" min="0" max="100" value="60" oninput="updateOppSliders('rock')">
+            <span class="val" id="opp-rock-val">0.60</span>
+        </div>
+        <div class="slider-row">
+            <label>Opp. Paper:</label>
+            <input type="range" id="opp-paper" min="0" max="100" value="30" oninput="updateOppSliders('paper')">
+            <span class="val" id="opp-paper-val">0.30</span>
+        </div>
+        <div class="slider-row">
+            <label>Opp. Scissors:</label>
+            <input type="range" id="opp-scissors" min="0" max="100" value="10" oninput="updateOppSliders('scissors')">
+            <span class="val" id="opp-scissors-val">0.10</span>
+        </div>
+
+        <div style="margin-top: 8px;">
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Opponent's Fixed Strategy:</div>
+            <div class="strat-bar" id="opp-bar">
+                <div class="strat-rock" style="width: 60%">R 60%</div>
+                <div class="strat-paper" style="width: 30%">P 30%</div>
+                <div class="strat-scissors" style="width: 10%">S 10%</div>
+            </div>
+        </div>
+
+        <button onclick="runExploitDemo()" style="margin-top: 12px;">Find Best Response</button>
+
+        <div style="margin-top: 16px;">
+            <div style="font-family: sans-serif; font-size: 13px; color: var(--text-muted); margin-bottom: 4px;">Learner's Average Strategy (converges to best response):</div>
+            <div class="strat-bar" id="learner-bar">
+                <div class="strat-rock" style="width: 33.3%">R 33%</div>
+                <div class="strat-paper" style="width: 33.3%">P 33%</div>
+                <div class="strat-scissors" style="width: 33.4%">S 33%</div>
+            </div>
+        </div>
+
+        <div class="readout" id="exploit-readout" style="margin-top: 16px;">
+            Set the opponent's strategy and press "Find Best Response."
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="bridge"><span class="section-num">11.</span> Bridge to Poker: From Normal-Form to Extensive-Form</h2>
+
+    <p>
+        Rock-Paper-Scissors is a <strong>normal-form game</strong>: a single simultaneous decision with
+        no hidden information and no sequential play. Poker is an <strong>extensive-form game</strong>:
+        it unfolds over time through a tree of decisions, with hidden information (private cards) and
+        multiple betting rounds.
+    </p>
+
+    <p>
+        The leap from this chapter to a poker solver requires three conceptual extensions:
+    </p>
+
+    <h3>11.1 Game Trees &amp; Sequential Decisions</h3>
+    <p>
+        In poker, decisions happen in sequence: Player 1 might bet, then Player 2 decides to call, raise,
+        or fold. This creates a <strong>game tree</strong> where each node is a decision point.
+        Instead of one regret-matching instance, we'll need one at <em>every</em> decision node.
+    </p>
+
+    <h3>11.2 Information Sets</h3>
+    <p>
+        A player can't distinguish between game states that look identical from their perspective.
+        If you hold A&#9824;K&#9829;, you can't tell whether the opponent holds Q&#9824;J&#9824; or
+        7&#9830;2&#9827;. All states that are indistinguishable to a player are grouped into an
+        <strong>information set</strong>. Regret matching operates at the information-set level,
+        not at individual game states.
+    </p>
+
+    <h3>11.3 Counterfactual Values</h3>
+    <p>
+        In a game tree, we can't simply use expected values — we need <strong>counterfactual values</strong>.
+        The counterfactual value of reaching an information set assumes the player tries to reach it
+        (probability 1 for their own actions) while all other players play according to their current
+        strategies. This "what if I tried to get here?" framing is the "counterfactual" in
+        <strong>Counterfactual Regret Minimization (CFR)</strong>.
+    </p>
+
+    <div class="callout insight">
+        <div class="callout-title">The Key Insight</div>
+        CFR = regret matching at every information set, using counterfactual values instead of
+        expected values. That's it. The algorithm we built in this chapter is the atomic unit;
+        CFR scales it across the entire game tree.
+        <br><br>
+        In Chapter 2, we'll implement full CFR for <strong>Kuhn Poker</strong> — a 3-card poker game
+        with a tractable game tree that still exhibits bluffing, value betting, and positional advantage.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
+        <span class="title">Regret minimization in games with incomplete information.</span>
+        Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="references"><span class="section-num">12.</span> References &amp; Further Reading</h2>
+
+    <div class="citation">
+        <span class="authors">Von Neumann, J.</span> (1928).
+        <span class="title">Zur Theorie der Gesellschaftsspiele.</span>
+        Mathematische Annalen, 100(1), 295–320.
+        <br>The foundational paper proving the minimax theorem for two-player zero-sum games.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Nash, J.</span> (1950).
+        <span class="title">Equilibrium points in n-person games.</span>
+        Proceedings of the National Academy of Sciences, 36(1), 48–49.
+        <br>The one-page proof that every finite game has at least one equilibrium in mixed strategies.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Blackwell, D.</span> (1956).
+        <span class="title">An analog of the minimax theorem for vector payoffs.</span>
+        Pacific Journal of Mathematics, 6(1), 1–8.
+        <br>The approachability theorem that provides the theoretical foundation for regret-based learning.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Hart, S., &amp; Mas-Colell, A.</span> (2000).
+        <span class="title">A simple adaptive procedure leading to correlated equilibrium.</span>
+        Econometrica, 68(5), 1127–1150.
+        <br>Introduced the regret matching algorithm studied in this chapter.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
+        <span class="title">Regret minimization in games with incomplete information.</span>
+        Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
+        <br>The paper that introduced CFR — applying regret matching to extensive-form games. This is the direct ancestor of all modern poker solvers.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Tammelin, O., Burch, N., Johanson, M., &amp; Bowling, M.</span> (2015).
+        <span class="title">Solving heads-up limit Texas hold'em.</span>
+        Science, 347(6218), 145–149.
+        <br>CFR+ was used to essentially solve Heads-Up Limit Hold'em — the first significant poker variant solved.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Brown, N., &amp; Sandholm, T.</span> (2019).
+        <span class="title">Superhuman AI for multiplayer poker.</span>
+        Science, 365(6456), 885–890.
+        <br>Pluribus — a superhuman AI for 6-player no-limit hold'em, built on Monte Carlo CFR with abstraction.
+    </div>
+
+</div>
+
+<footer>
+    <p>
+        CFR Poker Solver Course &mdash;
+        <a href="https://github.com/RexJensen/Solver_tutorial">GitHub Repository</a>
+    </p>
+    <p style="margin-top: 8px;">
+        Next: <a href="#">Chapter 2 &mdash; Kuhn Poker &amp; Counterfactual Regret Minimization</a>
+    </p>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- JavaScript: Regret Matching Engine + Interactive Demos                -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Payoff Matrix ──
+const PAYOFF = [
+    [ 0, -1,  1],  // Rock
+    [ 1,  0, -1],  // Paper
+    [-1,  1,  0],  // Scissors
+];
+const ACTIONS = ["Rock", "Paper", "Scissors"];
+const COLORS = { rock: "#ef4444", paper: "#3b82f6", scissors: "#f59e0b" };
+
+// ── Regret Matching Core ──
+function getStrategy(cumulativeRegret) {
+    const positive = cumulativeRegret.map(r => Math.max(r, 0));
+    const total = positive.reduce((a, b) => a + b, 0);
+    if (total > 0) {
+        return positive.map(r => r / total);
+    }
+    return [1/3, 1/3, 1/3];
+}
+
+function computeActionEVs(opponentStrategy) {
+    return PAYOFF.map(row =>
+        row.reduce((sum, val, j) => sum + val * opponentStrategy[j], 0)
+    );
+}
+
+function updateRegrets(myStrategy, opponentStrategy, cumulativeRegret) {
+    const actionEVs = computeActionEVs(opponentStrategy);
+    const strategyEV = myStrategy.reduce((sum, p, i) => sum + p * actionEVs[i], 0);
+    for (let a = 0; a < 3; a++) {
+        cumulativeRegret[a] += actionEVs[a] - strategyEV;
+    }
+}
+
+function computeExploitability(strategy) {
+    const actionEVs = computeActionEVs(strategy);
+    return Math.max(...actionEVs);
+}
+
+// ── Strategy Bar Update ──
+function updateBar(barId, strategy) {
+    const bar = document.getElementById(barId);
+    const names = ["R", "P", "S"];
+    const classes = ["strat-rock", "strat-paper", "strat-scissors"];
+    bar.innerHTML = "";
+    for (let i = 0; i < 3; i++) {
+        const pct = (strategy[i] * 100);
+        const div = document.createElement("div");
+        div.className = classes[i];
+        div.style.width = pct + "%";
+        if (pct > 8) {
+            div.textContent = names[i] + " " + Math.round(pct) + "%";
+        }
+        bar.appendChild(div);
+    }
+}
+
+// ── Slider Updates ──
+document.getElementById("p1-rock-bias").oninput = function() {
+    document.getElementById("p1-rock-val").textContent = (this.value / 100).toFixed(2);
+};
+document.getElementById("p2-scissors-bias").oninput = function() {
+    document.getElementById("p2-scissors-val").textContent = (this.value / 100).toFixed(2);
+};
+document.getElementById("iterations-slider").oninput = function() {
+    document.getElementById("iter-val").textContent = this.value;
+};
+
+function updateOppSliders(changed) {
+    const r = parseInt(document.getElementById("opp-rock").value);
+    const p = parseInt(document.getElementById("opp-paper").value);
+    const s = parseInt(document.getElementById("opp-scissors").value);
+    const total = r + p + s;
+    if (total === 0) return;
+    const nr = r / total, np = p / total, ns = s / total;
+    document.getElementById("opp-rock-val").textContent = nr.toFixed(2);
+    document.getElementById("opp-paper-val").textContent = np.toFixed(2);
+    document.getElementById("opp-scissors-val").textContent = ns.toFixed(2);
+    updateBar("opp-bar", [nr, np, ns]);
+}
+
+// ── Simple Canvas Chart ──
+function drawChart(canvasId, data, options) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    const pad = { top: 30, right: 20, bottom: 40, left: 60 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    // Clear
+    ctx.fillStyle = "#141620";
+    ctx.fillRect(0, 0, W, H);
+
+    // Axes
+    ctx.strokeStyle = "#2a2f3e";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+    ctx.stroke();
+
+    // Y-axis labels
+    ctx.fillStyle = "#8a8fa8";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "right";
+    const yTicks = options.yTicks || [0, 0.25, 0.5, 0.75, 1.0];
+    const yMin = options.yMin ?? 0;
+    const yMax = options.yMax ?? 1;
+    for (const tick of yTicks) {
+        const y = pad.top + plotH - ((tick - yMin) / (yMax - yMin)) * plotH;
+        ctx.fillText(tick.toFixed(2), pad.left - 8, y + 4);
+        ctx.strokeStyle = "#1e2231";
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+    }
+
+    // X-axis label
+    ctx.fillStyle = "#8a8fa8";
+    ctx.textAlign = "center";
+    ctx.fillText("Iteration", W / 2, H - 4);
+
+    // Y-axis label
+    ctx.save();
+    ctx.translate(14, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(options.yLabel || "", 0, 0);
+    ctx.restore();
+
+    // Title
+    ctx.fillStyle = "#e0e0e8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(options.title || "", pad.left, 18);
+
+    // Draw series
+    for (const series of data) {
+        ctx.strokeStyle = series.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < series.points.length; i++) {
+            const pt = series.points[i];
+            const x = pad.left + (pt.x / options.xMax) * plotW;
+            const y = pad.top + plotH - ((pt.y - yMin) / (yMax - yMin)) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Legend label at end
+        const last = series.points[series.points.length - 1];
+        const lx = pad.left + (last.x / options.xMax) * plotW;
+        const ly = pad.top + plotH - ((last.y - yMin) / (yMax - yMin)) * plotH;
+        ctx.fillStyle = series.color;
+        ctx.font = "11px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(series.label, lx + 4, ly + 3);
+    }
+}
+
+// ── Convergence Demo ──
+function runConvergenceDemo() {
+    const p1Bias = parseInt(document.getElementById("p1-rock-bias").value) / 100;
+    const p2Bias = parseInt(document.getElementById("p2-scissors-bias").value) / 100;
+    const numIter = parseInt(document.getElementById("iterations-slider").value);
+
+    // Initialize with biased regrets
+    const p1Regret = [p1Bias, (1 - p1Bias) / 2, (1 - p1Bias) / 2];
+    const p2Regret = [(1 - p2Bias) / 2, (1 - p2Bias) / 2, p2Bias];
+    const p1Sum = [0, 0, 0];
+    const p2Sum = [0, 0, 0];
+
+    // Data for charts
+    const exploitData = [];
+    const p1RockData = [], p1PaperData = [], p1ScissorsData = [];
+    const sampleInterval = Math.max(1, Math.floor(numIter / 500));
+
+    for (let t = 0; t < numIter; t++) {
+        const s1 = getStrategy(p1Regret);
+        const s2 = getStrategy(p2Regret);
+        for (let a = 0; a < 3; a++) { p1Sum[a] += s1[a]; p2Sum[a] += s2[a]; }
+        updateRegrets(s1, s2, p1Regret);
+        updateRegrets(s2, s1, p2Regret);
+
+        if (t % sampleInterval === 0 || t === numIter - 1) {
+            const total1 = p1Sum.reduce((a, b) => a + b, 0);
+            const avg1 = p1Sum.map(v => v / total1);
+            const expl = computeExploitability(avg1);
+
+            exploitData.push({ x: t, y: expl });
+            p1RockData.push({ x: t, y: avg1[0] });
+            p1PaperData.push({ x: t, y: avg1[1] });
+            p1ScissorsData.push({ x: t, y: avg1[2] });
+        }
+    }
+
+    // Final strategies
+    const total1 = p1Sum.reduce((a, b) => a + b, 0);
+    const total2 = p2Sum.reduce((a, b) => a + b, 0);
+    const avg1 = p1Sum.map(v => v / total1);
+    const avg2 = p2Sum.map(v => v / total2);
+    const expl1 = computeExploitability(avg1);
+    const expl2 = computeExploitability(avg2);
+
+    updateBar("p1-bar", avg1);
+    updateBar("p2-bar", avg2);
+
+    // Draw chart — show both exploitability and strategy evolution
+    drawChart("convergence-chart", [
+        { label: "P1 Exploit.", points: exploitData, color: "#f87171" },
+        { label: "Rock", points: p1RockData, color: COLORS.rock },
+        { label: "Paper", points: p1PaperData, color: COLORS.paper },
+        { label: "Scissors", points: p1ScissorsData, color: COLORS.scissors },
+    ], {
+        title: "P1 Average Strategy & Exploitability Over Iterations",
+        xMax: numIter,
+        yMin: 0,
+        yMax: 1,
+        yTicks: [0, 0.1, 0.2, 0.33, 0.5, 0.75, 1.0],
+        yLabel: "Value"
+    });
+
+    // Readout
+    document.getElementById("convergence-readout").innerHTML =
+        `<span class="label">After ${numIter.toLocaleString()} iterations:</span><br>` +
+        `Player 1 avg: R=<span class="val">${avg1[0].toFixed(4)}</span>  ` +
+        `P=<span class="val">${avg1[1].toFixed(4)}</span>  ` +
+        `S=<span class="val">${avg1[2].toFixed(4)}</span>  ` +
+        `(exploitability: <span class="val-green">${expl1.toFixed(6)}</span>)<br>` +
+        `Player 2 avg: R=<span class="val">${avg2[0].toFixed(4)}</span>  ` +
+        `P=<span class="val">${avg2[1].toFixed(4)}</span>  ` +
+        `S=<span class="val">${avg2[2].toFixed(4)}</span>  ` +
+        `(exploitability: <span class="val-green">${expl2.toFixed(6)}</span>)<br>` +
+        `<br><span class="label">Nash Equilibrium target: [0.3333, 0.3333, 0.3333]</span>`;
+}
+
+// ── Exploit Demo ──
+function runExploitDemo() {
+    const r = parseInt(document.getElementById("opp-rock").value);
+    const p = parseInt(document.getElementById("opp-paper").value);
+    const s = parseInt(document.getElementById("opp-scissors").value);
+    const total = r + p + s;
+    if (total === 0) return;
+    const oppStrategy = [r / total, p / total, s / total];
+
+    const regret = [0, 0, 0];
+    const stratSum = [0, 0, 0];
+    const numIter = 50000;
+
+    for (let t = 0; t < numIter; t++) {
+        const strat = getStrategy(regret);
+        for (let a = 0; a < 3; a++) stratSum[a] += strat[a];
+        updateRegrets(strat, oppStrategy, regret);
+    }
+
+    const totalS = stratSum.reduce((a, b) => a + b, 0);
+    const avg = stratSum.map(v => v / totalS);
+    updateBar("learner-bar", avg);
+
+    // EV math
+    const actionEVs = computeActionEVs(oppStrategy);
+    const bestIdx = actionEVs.indexOf(Math.max(...actionEVs));
+
+    let evMath = `<span class="label">EV of each action vs opponent:</span><br>`;
+    for (let a = 0; a < 3; a++) {
+        const parts = PAYOFF[a].map((v, j) =>
+            `(${v >= 0 ? "+" : ""}${v})(${oppStrategy[j].toFixed(2)})`
+        ).join(" + ");
+        const cls = actionEVs[a] > 0.001 ? "val-green" : (actionEVs[a] < -0.001 ? "val-red" : "val");
+        evMath += `  EV(${ACTIONS[a].padEnd(8)}) = ${parts} = <span class="${cls}">${actionEVs[a] >= 0 ? "+" : ""}${actionEVs[a].toFixed(3)}</span><br>`;
+    }
+    evMath += `<br><span class="label">Best response: <span class="val-green">${ACTIONS[bestIdx]}</span></span> (EV = <span class="val-green">+${actionEVs[bestIdx].toFixed(3)}</span>)<br>`;
+    evMath += `<span class="label">Learner converged to:</span> R=<span class="val">${avg[0].toFixed(4)}</span>  P=<span class="val">${avg[1].toFixed(4)}</span>  S=<span class="val">${avg[2].toFixed(4)}</span>`;
+
+    document.getElementById("exploit-readout").innerHTML = evMath;
+}
+
+// ── Initialize demos on page load ──
+window.addEventListener("load", () => {
+    updateOppSliders("rock");
+});
+</script>
+
+</body>
+</html>
