@@ -409,6 +409,32 @@
         .citation .authors { color: var(--text); }
         .citation .title { font-style: italic; color: var(--accent); }
 
+        /* ── Expandable Citations ── */
+        .citation details { margin-top: 8px; }
+        .citation summary {
+            cursor: pointer;
+            color: var(--accent);
+            font-size: 13px;
+            user-select: none;
+        }
+        .citation summary:hover { text-decoration: underline; }
+        .citation .description {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            line-height: 1.65;
+            font-size: 13.5px;
+        }
+        .citation .description p { margin-bottom: 10px; }
+        .citation .description p:last-child { margin-bottom: 0; }
+        .citation .paper-link {
+            display: inline-block;
+            margin-top: 8px;
+            color: var(--accent);
+            font-size: 13px;
+        }
+
         /* ── Responsive ── */
         @media (max-width: 600px) {
             .hero h1 { font-size: 28px; }
@@ -1258,28 +1284,56 @@ strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]
         <span class="authors">Kuhn, H.</span> (1950).
         <span class="title">Simplified two-person poker.</span>
         Contributions to the Theory of Games, 1, 97–103.
-        <br>The original definition of the game studied in this chapter.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>Harold Kuhn invented this simplified poker variant specifically so that its game-theoretic solution could be computed by hand. Motivated by Von Neumann and Morgenstern's observation that poker was a natural example of imperfect-information games but too complex for rigorous analysis, Kuhn stripped it down to three cards and a single betting round — the minimum needed to exhibit strategic deception.</p>
+                <p>Despite its simplicity, Kuhn showed that even this tiny game already captures the central aspects of poker strategy: bluffing (betting with a weak hand), value betting (betting with a strong hand), and the interplay between the two. He proved that Player 1 has infinitely many equilibrium strategies parameterized by a single value (the bluff frequency &alpha;), while Player 2 has a unique equilibrium. The game remains the standard first test case for poker AI algorithms 75 years later.</p>
+                <a class="paper-link" href="https://sites.math.rutgers.edu/~zeilberg/akherim/PokerPapers/Kuhn1951.pdf" target="_blank">Read the paper (PDF) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
         <span class="title">Regret minimization in games with incomplete information.</span>
         Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
-        <br>The foundational CFR paper. Introduced the counterfactual regret decomposition that makes CFR possible.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>The paper that introduced <strong>Counterfactual Regret Minimization (CFR)</strong> — the algorithm implemented in this chapter and the foundation of all modern poker solvers. The key insight is a decomposition theorem: overall regret in an extensive-form game can be bounded by the sum of <em>counterfactual</em> regrets at each information set. This allows you to run simple regret matching independently at each decision point while guaranteeing convergence of the full strategy profile.</p>
+                <p>CFR immediately achieved practical impact, solving poker abstractions with up to 10<sup>12</sup> states — two orders of magnitude beyond prior linear programming approaches. Strategies produced by CFR competed in the 2007 Computer Poker Competition and Man-vs-Machine Championship. The paper spawned an entire family of algorithms (CFR+, MCCFR, Discounted CFR) that remain the state of the art for imperfect-information game solving.</p>
+                <a class="paper-link" href="https://proceedings.neurips.cc/paper/2007/file/08d98638c6fcd194a4b1e6992063e944-Paper.pdf" target="_blank">Read the paper (NeurIPS, PDF) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Tammelin, O., Burch, N., Johanson, M., &amp; Bowling, M.</span> (2015).
         <span class="title">Solving heads-up limit Texas hold'em.</span>
         Science, 347(6218), 145–149.
-        <br>CFR+ was used to essentially solve Heads-Up Limit Hold'em with 3.19 × 10<sup>14</sup> information sets.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>This paper announced that Heads-Up Limit Texas Hold'em — with 3.19 &times; 10<sup>14</sup> information sets — had been "essentially weakly solved." Their program <strong>Cepheus</strong> plays so close to the game-theoretic optimum that it cannot be statistically distinguished from perfect play over a human lifetime. This was the first imperfect-information game played competitively by humans to be solved.</p>
+                <p>The breakthrough came from <strong>CFR+</strong>, a seemingly minor variant of CFR that floors negative regrets to zero at each iteration rather than allowing them to accumulate. This change dramatically accelerates convergence. Cepheus was trained using 4,800 CPUs over 68 days. After publication, their website allowed visitors to play against Cepheus — over 39,000 users played 3.5 million hands, and Cepheus maintained a clear positive win rate.</p>
+                <a class="paper-link" href="https://www.science.org/doi/10.1126/science.1259433" target="_blank">Read the paper (Science) &rarr;</a>
+            </div>
+        </details>
     </div>
 
     <div class="citation">
         <span class="authors">Lanctot, M., Waugh, K., Zinkevich, M., &amp; Bowling, M.</span> (2009).
         <span class="title">Monte Carlo sampling for regret minimization in extensive games.</span>
         Advances in Neural Information Processing Systems (NeurIPS), 22.
-        <br>Introduced MCCFR — the sampling-based variant that makes CFR tractable for large games.
+        <details>
+            <summary>About this paper</summary>
+            <div class="description">
+                <p>Vanilla CFR (as implemented in this chapter) traverses the <em>entire</em> game tree every iteration. For games like No-Limit Hold'em with 10<sup>160+</sup> states, this is impossible. This paper introduced <strong>Monte Carlo CFR (MCCFR)</strong> — a general family of sampling-based CFR variants that explore only a subset of the tree each iteration while maintaining the same convergence guarantees in expectation.</p>
+                <p>The paper defines two key sampling schemes: <em>outcome sampling</em> (sample a single play-through per iteration) and <em>external sampling</em> (sample chance nodes and opponent actions, but enumerate the current player's actions). External sampling is particularly efficient — it requires only a constant-factor increase in iterations but achieves an order-of-magnitude reduction in cost per iteration, yielding an asymptotic speedup. MCCFR is what makes CFR practical for real poker variants and is the basis for all large-scale poker solvers.</p>
+                <a class="paper-link" href="https://mlanctot.info/files/papers/nips09mccfr.pdf" target="_blank">Read the paper (PDF) &rarr;</a>
+            </div>
+        </details>
     </div>
 
 </div>
