@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CFR Poker Solver Course | From First Principles to NLHE</title>
+    <meta name="description" content="A free, open-source course building a Counterfactual Regret Minimization poker solver from scratch. Interactive lessons with Python code.">
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #181b24;
+            --surface2: #1e2231;
+            --border: #2a2f3e;
+            --text: #e0e0e8;
+            --text-muted: #8a8fa8;
+            --accent: #6c9cfc;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --orange: #fb923c;
+            --max-width: 860px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+
+        /* ── Skip Link ── */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 16px;
+            background: var(--accent);
+            color: var(--bg);
+            padding: 8px 16px;
+            border-radius: 0 0 6px 6px;
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 200;
+        }
+        .skip-link:focus { top: 0; }
+
+        /* ── Header ── */
+        header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+        }
+        header .inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header .brand {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 15px;
+            text-decoration: none;
+        }
+        header .links {
+            display: flex;
+            gap: 16px;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        header .links a { color: var(--text-muted); }
+        header .links a:hover { color: var(--accent); text-decoration: none; }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 80px 24px 48px;
+            text-align: center;
+        }
+        .hero .badge {
+            display: inline-block;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--green);
+            background: rgba(74, 222, 128, 0.1);
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            border-radius: 20px;
+            padding: 6px 16px;
+            margin-bottom: 24px;
+        }
+        .hero h1 {
+            font-size: 48px;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-style: italic;
+            max-width: 600px;
+            margin: 0 auto 32px;
+        }
+        .hero .cta {
+            display: inline-block;
+            background: var(--accent);
+            color: var(--bg);
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 14px 32px;
+            border-radius: 8px;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .hero .cta:hover {
+            background: #8ab4fd;
+            text-decoration: none;
+            transform: translateY(-1px);
+        }
+
+        /* ── Curriculum ── */
+        .curriculum {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+        .curriculum h2 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .curriculum .lead {
+            color: var(--text-muted);
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .lesson-card {
+            display: block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px 28px 24px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .lesson-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            text-decoration: none;
+        }
+        .lesson-card:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .lesson-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .lesson-card .chapter-num {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .lesson-card .status {
+            font-family: sans-serif;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-weight: bold;
+        }
+        .status-available {
+            background: rgba(74, 222, 128, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(74, 222, 128, 0.25);
+        }
+        .status-coming {
+            background: rgba(138, 143, 168, 0.1);
+            color: var(--text-muted);
+            border: 1px solid rgba(138, 143, 168, 0.2);
+        }
+        .lesson-card h3 {
+            font-size: 22px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .lesson-card .desc {
+            color: var(--text-muted);
+            font-size: 15px;
+            margin-bottom: 12px;
+        }
+        .lesson-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 4px;
+            background: var(--surface2);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+        }
+
+        .lesson-card.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+        .lesson-card.disabled:hover {
+            border-color: var(--border);
+            transform: none;
+        }
+
+        /* ── About ── */
+        .about {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+        .about h2 {
+            font-size: 28px;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        .about-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .about-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+        }
+        .about-item h4 {
+            font-family: sans-serif;
+            font-size: 15px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+        .about-item p {
+            font-size: 15px;
+            color: var(--text-muted);
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 32px; }
+            .about-grid { grid-template-columns: 1fr; }
+            .lesson-card { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header>
+    <div class="inner">
+        <a href="index.html" class="brand" aria-label="CFR Poker Solver Course home">CFR Poker Solver</a>
+        <nav class="links" aria-label="Main navigation">
+            <a href="https://github.com/RexJensen/Solver_tutorial">GitHub</a>
+        </nav>
+    </div>
+</header>
+
+<main id="main">
+
+    <section class="hero" aria-labelledby="hero-title">
+        <div class="badge">Free &amp; Open Source</div>
+        <h1 id="hero-title">CFR Poker Solver</h1>
+        <p class="subtitle">Build a Counterfactual Regret Minimization solver from first principles, step by step from Rock-Paper-Scissors to No-Limit Hold'em.</p>
+        <a href="lessons/01-regret-matching.html" class="cta">Start Chapter 1</a>
+    </section>
+
+    <section class="curriculum" aria-labelledby="curriculum-title">
+        <h2 id="curriculum-title">Curriculum</h2>
+        <p class="lead">Five chapters taking you from zero to a working NLHE solver.</p>
+
+        <a href="lessons/01-regret-matching.html" class="lesson-card" aria-label="Chapter 1: Regret Matching and Nash Equilibrium - Available now">
+            <div class="card-header">
+                <span class="chapter-num">Chapter 1</span>
+                <span class="status status-available">Available</span>
+            </div>
+            <h3>Regret Matching &amp; Nash Equilibrium</h3>
+            <p class="desc">The atomic algorithm inside every poker solver, understood through Rock-Paper-Scissors. Includes interactive demos.</p>
+            <div class="tags">
+                <span class="tag">Rock-Paper-Scissors</span>
+                <span class="tag">Nash Equilibrium</span>
+                <span class="tag">Regret Matching</span>
+                <span class="tag">Exploitability</span>
+            </div>
+        </a>
+
+        <div class="lesson-card disabled" aria-label="Chapter 2: Kuhn Poker - Coming soon">
+            <div class="card-header">
+                <span class="chapter-num">Chapter 2</span>
+                <span class="status status-coming">Coming Soon</span>
+            </div>
+            <h3>Kuhn Poker &amp; CFR</h3>
+            <p class="desc">Extend regret matching to sequential games with hidden information. Build a full CFR solver for a 3-card poker variant.</p>
+            <div class="tags">
+                <span class="tag">Kuhn Poker</span>
+                <span class="tag">Game Trees</span>
+                <span class="tag">Information Sets</span>
+                <span class="tag">CFR</span>
+            </div>
+        </div>
+
+        <div class="lesson-card disabled" aria-label="Chapter 3: Leduc Poker - Coming soon">
+            <div class="card-header">
+                <span class="chapter-num">Chapter 3</span>
+                <span class="status status-coming">Coming Soon</span>
+            </div>
+            <h3>Leduc Poker &amp; Multi-Street CFR</h3>
+            <p class="desc">Handle multiple betting rounds, larger game trees, and see CFR scale to more complex poker variants.</p>
+            <div class="tags">
+                <span class="tag">Leduc Poker</span>
+                <span class="tag">Multi-Street</span>
+                <span class="tag">Betting Rounds</span>
+            </div>
+        </div>
+
+        <div class="lesson-card disabled" aria-label="Chapter 4: NLHE Abstractions - Coming soon">
+            <div class="card-header">
+                <span class="chapter-num">Chapter 4</span>
+                <span class="status status-coming">Coming Soon</span>
+            </div>
+            <h3>Abstraction for Real Poker</h3>
+            <p class="desc">Card bucketing, action abstraction, and the engineering tricks that make solving NLHE tractable.</p>
+            <div class="tags">
+                <span class="tag">Card Abstraction</span>
+                <span class="tag">Action Abstraction</span>
+                <span class="tag">Bucketing</span>
+            </div>
+        </div>
+
+        <div class="lesson-card disabled" aria-label="Chapter 5: NLHE Solver - Coming soon">
+            <div class="card-header">
+                <span class="chapter-num">Chapter 5</span>
+                <span class="status status-coming">Coming Soon</span>
+            </div>
+            <h3>Building the NLHE Solver</h3>
+            <p class="desc">Putting it all together: CFR+ and Monte Carlo CFR applied to real No-Limit Hold'em subgames.</p>
+            <div class="tags">
+                <span class="tag">CFR+</span>
+                <span class="tag">MCCFR</span>
+                <span class="tag">NLHE</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="about" aria-labelledby="about-title">
+        <h2 id="about-title">What You'll Learn</h2>
+        <div class="about-grid">
+            <div class="about-item">
+                <h4>Theory</h4>
+                <p>Nash Equilibrium, the Minimax Theorem, regret minimization, and convergence guarantees with full proofs and citations.</p>
+            </div>
+            <div class="about-item">
+                <h4>Implementation</h4>
+                <p>Working Python code at every step. Each chapter includes a companion script you can run and modify.</p>
+            </div>
+            <div class="about-item">
+                <h4>Interactive Demos</h4>
+                <p>Visualize convergence, exploitability, and strategy evolution in real time directly in your browser.</p>
+            </div>
+            <div class="about-item">
+                <h4>Poker Applications</h4>
+                <p>Understand exactly how tools like PIOsolver work under the hood, from regret matching to full NLHE solving.</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>CFR Poker Solver Course &mdash; <a href="https://github.com/RexJensen/Solver_tutorial">Source on GitHub</a></p>
+</footer>
+
+</body>
+</html>
