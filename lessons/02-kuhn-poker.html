@@ -1,0 +1,1502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chapter 2: Kuhn Poker &amp; CFR | CFR Poker Solver Course</title>
+    <meta name="description" content="Implement Counterfactual Regret Minimization for Kuhn Poker. Learn game trees, information sets, and how poker solvers really work.">
+    <style>
+        /* ── Skip Link ── */
+        .skip-link {
+            position: absolute;
+            top: -100%;
+            left: 16px;
+            background: var(--accent);
+            color: var(--bg);
+            padding: 8px 16px;
+            border-radius: 0 0 6px 6px;
+            font-family: sans-serif;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 200;
+            text-decoration: none;
+        }
+        .skip-link:focus { top: 0; }
+        :root {
+            --bg: #0f1117;
+            --surface: #181b24;
+            --surface2: #1e2231;
+            --border: #2a2f3e;
+            --text: #e0e0e8;
+            --text-muted: #8a8fa8;
+            --accent: #6c9cfc;
+            --accent2: #a78bfa;
+            --green: #4ade80;
+            --red: #f87171;
+            --yellow: #fbbf24;
+            --orange: #fb923c;
+            --code-bg: #141620;
+            --max-width: 860px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.75;
+            font-size: 17px;
+        }
+
+        /* ── Navigation ── */
+        nav {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 0;
+            position: sticky; top: 0; z-index: 100;
+        }
+        nav .inner {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav .brand {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--accent);
+            font-size: 15px;
+            text-decoration: none;
+        }
+        nav .links { display: flex; gap: 20px; }
+        nav .links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-family: sans-serif;
+            transition: color 0.2s;
+        }
+        nav .links a:hover { color: var(--accent); }
+        nav .links a.active { color: var(--accent); font-weight: bold; }
+
+        /* ── Hero ── */
+        .hero {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 60px 24px 40px;
+        }
+        .hero .chapter-label {
+            font-family: 'Courier New', monospace;
+            color: var(--accent);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 12px;
+        }
+        .hero h1 {
+            font-size: 42px;
+            line-height: 1.15;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 24px;
+        }
+        .hero .meta {
+            font-family: sans-serif;
+            font-size: 13px;
+            color: var(--text-muted);
+            display: flex;
+            gap: 24px;
+        }
+        .hero .meta span { display: flex; align-items: center; gap: 6px; }
+
+        /* ── Content ── */
+        .content {
+            max-width: var(--max-width);
+            margin: 0 auto;
+            padding: 0 24px 80px;
+        }
+
+        h2 {
+            font-size: 28px;
+            color: #fff;
+            margin: 56px 0 20px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        h3 {
+            font-size: 21px;
+            color: var(--accent);
+            margin: 36px 0 14px;
+        }
+        h4 {
+            font-size: 17px;
+            color: var(--accent2);
+            margin: 24px 0 10px;
+        }
+        p { margin-bottom: 16px; }
+        ul, ol { margin: 0 0 16px 28px; }
+        li { margin-bottom: 6px; }
+
+        a { color: var(--accent); }
+        a:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        button:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ── Callout Boxes ── */
+        .callout {
+            background: var(--surface);
+            border-left: 4px solid var(--accent);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+            margin: 24px 0;
+        }
+        .callout.definition { border-left-color: var(--accent2); }
+        .callout.theorem { border-left-color: var(--green); }
+        .callout.warning { border-left-color: var(--yellow); }
+        .callout.insight { border-left-color: var(--orange); }
+        .callout .callout-title {
+            font-family: sans-serif;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .callout.definition .callout-title { color: var(--accent2); }
+        .callout.theorem .callout-title { color: var(--green); }
+        .callout.warning .callout-title { color: var(--yellow); }
+        .callout.insight .callout-title { color: var(--orange); }
+
+        /* ── Code ── */
+        code {
+            font-family: 'Courier New', monospace;
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 15px;
+            color: var(--green);
+        }
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            overflow-x: auto;
+            margin: 20px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+            color: var(--text);
+        }
+        .keyword { color: var(--accent2); }
+        .comment { color: var(--text-muted); font-style: italic; }
+        .string { color: var(--green); }
+        .number { color: var(--orange); }
+
+        /* ── Math ── */
+        .math-block {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 15px;
+            text-align: center;
+            overflow-x: auto;
+        }
+        .math-inline {
+            font-family: 'Courier New', monospace;
+            color: var(--yellow);
+            font-size: 15px;
+        }
+
+        /* ── Tables ── */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+        th, td {
+            padding: 10px 16px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        th {
+            background: var(--surface);
+            color: var(--accent);
+            font-family: sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        td { background: var(--surface2); }
+
+        /* ── Interactive Demo Container ── */
+        .demo-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 28px;
+            margin: 28px 0;
+        }
+        .demo-container h4 {
+            margin-top: 0;
+            color: #fff;
+            font-family: sans-serif;
+            font-size: 16px;
+        }
+
+        /* ── Canvas / Chart ── */
+        canvas {
+            width: 100% !important;
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+
+        /* ── Buttons ── */
+        button {
+            font-family: sans-serif;
+            font-size: 14px;
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface2);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        button:hover {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        /* ── Slider ── */
+        .slider-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 10px 0;
+            font-family: sans-serif;
+            font-size: 14px;
+        }
+        .slider-row label { color: var(--text-muted); min-width: 100px; }
+        .slider-row input[type=range] { flex: 1; }
+        .slider-row .val {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            min-width: 48px;
+            text-align: right;
+        }
+
+        /* ── Strategy bar ── */
+        .strat-bar {
+            display: flex;
+            height: 32px;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 8px 0;
+            font-family: sans-serif;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .strat-bar div {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: width 0.3s;
+            min-width: 0;
+        }
+        .strat-pass { background: #6366f1; color: #fff; }
+        .strat-bet { background: #ef4444; color: #fff; }
+
+        /* ── Info readout ── */
+        .readout {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: 8px 0;
+            line-height: 1.8;
+        }
+        .readout .label { color: var(--text); }
+        .readout .val { color: var(--accent); }
+        .readout .val-green { color: var(--green); }
+        .readout .val-red { color: var(--red); }
+
+        /* ── Game Tree Visual ── */
+        .tree-node {
+            display: inline-block;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 2px;
+        }
+        .tree-node.terminal { border-color: var(--green); color: var(--green); }
+        .tree-node.chance { border-color: var(--yellow); color: var(--yellow); }
+        .tree-node.p0 { border-color: var(--accent); color: var(--accent); }
+        .tree-node.p1 { border-color: var(--accent2); color: var(--accent2); }
+
+        /* ── Section Numbers ── */
+        .section-num {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            margin-right: 8px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border);
+            padding: 40px 24px;
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        footer a { color: var(--accent); text-decoration: none; }
+
+        /* ── TOC ── */
+        .toc {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 24px 28px;
+            margin: 32px 0;
+        }
+        .toc h3 { margin-top: 0; color: #fff; font-size: 16px; font-family: sans-serif; }
+        .toc ol { margin: 12px 0 0 20px; }
+        .toc li { margin-bottom: 4px; font-size: 15px; }
+        .toc a { color: var(--text-muted); text-decoration: none; }
+        .toc a:hover { color: var(--accent); }
+
+        /* ── Citation ── */
+        .citation {
+            background: var(--surface2);
+            border-left: 3px solid var(--text-muted);
+            padding: 12px 20px;
+            margin: 12px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+            font-family: sans-serif;
+        }
+        .citation .authors { color: var(--text); }
+        .citation .title { font-style: italic; color: var(--accent); }
+
+        /* ── Responsive ── */
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 28px; }
+            .hero .meta { flex-direction: column; gap: 8px; }
+        }
+    </style>
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<nav aria-label="Main navigation">
+    <div class="inner">
+        <a href="../index.html" class="brand">CFR Poker Solver Course</a>
+        <div class="links">
+            <a href="01-regret-matching.html">Ch 1: Regret Matching</a>
+            <a href="02-kuhn-poker.html" class="active" aria-current="page">Ch 2: Kuhn Poker</a>
+            <span style="color: var(--text-muted); font-size: 14px; font-family: sans-serif;">Ch 3: Leduc Poker</span>
+            <span style="color: var(--text-muted); font-size: 14px; font-family: sans-serif;">Ch 4: Abstractions</span>
+            <span style="color: var(--text-muted); font-size: 14px; font-family: sans-serif;">Ch 5: NLHE Solver</span>
+        </div>
+    </div>
+</nav>
+
+<main id="main">
+
+<div class="hero">
+    <div class="chapter-label">Chapter 2</div>
+    <h1>Kuhn Poker &amp; CFR</h1>
+    <div class="subtitle">From a single decision to a full game tree — Counterfactual Regret Minimization in action</div>
+    <div class="meta">
+        <span>Prerequisites: <a href="01-regret-matching.html">Chapter 1</a></span>
+        <span>Companion code: <a href="../code/lesson_02_kuhn.py"><code>lesson_02_kuhn.py</code></a></span>
+    </div>
+</div>
+
+<div class="content">
+
+    <!-- ── Table of Contents ── -->
+    <div class="toc">
+        <h3>Table of Contents</h3>
+        <ol>
+            <li><a href="#recap">Recap: From RPS to Poker</a></li>
+            <li><a href="#kuhn-rules">Kuhn Poker: The Simplest Real Poker Game</a></li>
+            <li><a href="#game-tree">The Game Tree</a></li>
+            <li><a href="#info-sets">Information Sets</a></li>
+            <li><a href="#cfr-algorithm">The CFR Algorithm</a></li>
+            <li><a href="#counterfactual">Counterfactual Values &amp; Reach Probabilities</a></li>
+            <li><a href="#implementation">Implementation Walkthrough</a></li>
+            <li><a href="#nash">The Nash Equilibrium of Kuhn Poker</a></li>
+            <li><a href="#poker-concepts">Poker Concepts in Miniature</a></li>
+            <li><a href="#demo-cfr">Interactive Demo: CFR Training</a></li>
+            <li><a href="#demo-equilibrium">Interactive Demo: Equilibrium Explorer</a></li>
+            <li><a href="#bridge">Bridge to Larger Games</a></li>
+            <li><a href="#references">References</a></li>
+        </ol>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="recap"><span class="section-num">1.</span> Recap: From RPS to Poker</h2>
+
+    <p>
+        In <a href="01-regret-matching.html">Chapter 1</a>, we built regret matching for
+        Rock-Paper-Scissors — a <strong>normal-form game</strong> with one simultaneous decision.
+        We showed that two regret-matching players converge to Nash Equilibrium, and we introduced
+        exploitability as a convergence metric.
+    </p>
+    <p>
+        Poker is fundamentally different. It's an <strong>extensive-form game</strong>:
+    </p>
+    <ul>
+        <li><strong>Sequential</strong>: Players act in turns, not simultaneously</li>
+        <li><strong>Hidden information</strong>: Each player sees their own cards but not the opponent's</li>
+        <li><strong>Tree structure</strong>: The game unfolds through a tree of decision points</li>
+    </ul>
+    <p>
+        To handle this, we need a way to run regret matching at <em>every decision point in the tree</em>,
+        coordinating updates across the entire game. That algorithm is
+        <strong>Counterfactual Regret Minimization (CFR)</strong>.
+    </p>
+    <p>
+        We'll develop it using <strong>Kuhn Poker</strong> — the smallest poker game that captures
+        bluffing, value betting, and positional advantage.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="kuhn-rules"><span class="section-num">2.</span> Kuhn Poker: The Simplest Real Poker Game</h2>
+
+    <div class="callout definition">
+        <div class="callout-title">Kuhn Poker Rules</div>
+        <strong>Deck:</strong> Three cards — Jack (J), Queen (Q), King (K).<br>
+        <strong>Setup:</strong> Both players ante 1 chip. Each is dealt one card.<br>
+        <strong>Play:</strong>
+        <ol style="margin-top: 10px;">
+            <li>Player 1 acts: <strong>Check</strong> or <strong>Bet</strong> (1 chip)</li>
+            <li>If Player 1 <strong>checked</strong>:
+                <ul>
+                    <li>Player 2 can <strong>Check</strong> (showdown) or <strong>Bet</strong> (1 chip)</li>
+                    <li>If Player 2 bet: Player 1 can <strong>Fold</strong> (lose ante) or <strong>Call</strong> (1 chip)</li>
+                </ul>
+            </li>
+            <li>If Player 1 <strong>bet</strong>:
+                <ul>
+                    <li>Player 2 can <strong>Fold</strong> (lose ante) or <strong>Call</strong> (1 chip)</li>
+                </ul>
+            </li>
+        </ol>
+        <strong>Showdown:</strong> Higher card wins the pot. K &gt; Q &gt; J.
+    </div>
+
+    <p>
+        Despite its simplicity, Kuhn Poker has several features that make it a perfect teaching tool:
+    </p>
+    <ul>
+        <li>Small enough to solve analytically (we know the exact Nash Equilibrium)</li>
+        <li>Large enough to exhibit bluffing, value betting, and position effects</li>
+        <li>Has 12 information sets — small enough to inspect every one</li>
+        <li>Introduced by Harold Kuhn in 1950, the same era as Nash's equilibrium theorem</li>
+    </ul>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="game-tree"><span class="section-num">3.</span> The Game Tree</h2>
+
+    <p>
+        The game tree shows every possible sequence of actions. Each path from root to leaf
+        is a <strong>history</strong> — a complete record of how the hand played out.
+    </p>
+
+    <p>
+        We'll use a compact notation: <code>c</code> = check/fold (pass), <code>b</code> = bet/call.
+    </p>
+
+    <table>
+        <tr>
+            <th>History</th>
+            <th>Meaning</th>
+            <th>Terminal?</th>
+            <th>Pot</th>
+        </tr>
+        <tr>
+            <td><code>cc</code></td>
+            <td>Both check → showdown</td>
+            <td>Yes</td>
+            <td>2 (1+1)</td>
+        </tr>
+        <tr>
+            <td><code>cb</code></td>
+            <td>P1 checks, P2 bets → P1 must act</td>
+            <td>No</td>
+            <td>—</td>
+        </tr>
+        <tr>
+            <td><code>cbc</code></td>
+            <td>P1 checks, P2 bets, P1 folds</td>
+            <td>Yes</td>
+            <td>P1 loses 1</td>
+        </tr>
+        <tr>
+            <td><code>cbb</code></td>
+            <td>P1 checks, P2 bets, P1 calls → showdown</td>
+            <td>Yes</td>
+            <td>4 (2+2)</td>
+        </tr>
+        <tr>
+            <td><code>bc</code></td>
+            <td>P1 bets, P2 folds</td>
+            <td>Yes</td>
+            <td>P2 loses 1</td>
+        </tr>
+        <tr>
+            <td><code>bb</code></td>
+            <td>P1 bets, P2 calls → showdown</td>
+            <td>Yes</td>
+            <td>4 (2+2)</td>
+        </tr>
+    </table>
+
+    <p>
+        There are 5 terminal histories and 4 decision points. But with 3 possible card deals per player
+        (and 2 possible opponent cards for each), the full tree has
+        <span class="math-inline">6 × 5 = 30</span> terminal states. This is small enough to enumerate
+        completely — no sampling or abstraction needed.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="info-sets"><span class="section-num">4.</span> Information Sets</h2>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Information Set</div>
+        An <strong>information set</strong> groups all game states that are indistinguishable
+        from a player's perspective. A player's strategy can only depend on their information set,
+        not on hidden information they can't observe.
+        <br><br>
+        In poker: your information set = <strong>your card + the betting history</strong>.
+        You can't see the opponent's card, so all states with different opponent cards but the same
+        betting history belong to the same information set.
+    </div>
+
+    <p>
+        In Kuhn Poker, the information sets are:
+    </p>
+
+    <h3>Player 1's Information Sets (6 total)</h3>
+    <table>
+        <tr>
+            <th>Info Set</th>
+            <th>Situation</th>
+            <th>Actions</th>
+            <th>Possible Opponent Cards</th>
+        </tr>
+        <tr>
+            <td><code>J:</code></td>
+            <td>Holding Jack, opening action</td>
+            <td>Check / Bet</td>
+            <td>Q or K</td>
+        </tr>
+        <tr>
+            <td><code>Q:</code></td>
+            <td>Holding Queen, opening action</td>
+            <td>Check / Bet</td>
+            <td>J or K</td>
+        </tr>
+        <tr>
+            <td><code>K:</code></td>
+            <td>Holding King, opening action</td>
+            <td>Check / Bet</td>
+            <td>J or Q</td>
+        </tr>
+        <tr>
+            <td><code>J:cb</code></td>
+            <td>Holding Jack, checked, P2 bet</td>
+            <td>Fold / Call</td>
+            <td>Q or K</td>
+        </tr>
+        <tr>
+            <td><code>Q:cb</code></td>
+            <td>Holding Queen, checked, P2 bet</td>
+            <td>Fold / Call</td>
+            <td>J or K</td>
+        </tr>
+        <tr>
+            <td><code>K:cb</code></td>
+            <td>Holding King, checked, P2 bet</td>
+            <td>Fold / Call</td>
+            <td>J or Q</td>
+        </tr>
+    </table>
+
+    <h3>Player 2's Information Sets (6 total)</h3>
+    <table>
+        <tr>
+            <th>Info Set</th>
+            <th>Situation</th>
+            <th>Actions</th>
+            <th>Possible Opponent Cards</th>
+        </tr>
+        <tr>
+            <td><code>J:c</code></td>
+            <td>Holding Jack, P1 checked</td>
+            <td>Check / Bet</td>
+            <td>Q or K</td>
+        </tr>
+        <tr>
+            <td><code>Q:c</code></td>
+            <td>Holding Queen, P1 checked</td>
+            <td>Check / Bet</td>
+            <td>J or K</td>
+        </tr>
+        <tr>
+            <td><code>K:c</code></td>
+            <td>Holding King, P1 checked</td>
+            <td>Check / Bet</td>
+            <td>J or Q</td>
+        </tr>
+        <tr>
+            <td><code>J:b</code></td>
+            <td>Holding Jack, P1 bet</td>
+            <td>Fold / Call</td>
+            <td>Q or K</td>
+        </tr>
+        <tr>
+            <td><code>Q:b</code></td>
+            <td>Holding Queen, P1 bet</td>
+            <td>Fold / Call</td>
+            <td>J or K</td>
+        </tr>
+        <tr>
+            <td><code>K:b</code></td>
+            <td>Holding King, P1 bet</td>
+            <td>Fold / Call</td>
+            <td>J or Q</td>
+        </tr>
+    </table>
+
+    <div class="callout insight">
+        <div class="callout-title">Key Insight: One Regret Matcher Per Info Set</div>
+        In Chapter 1, we had one regret-matching instance for the entire game.
+        In CFR, we have <strong>one regret-matching instance per information set</strong>.
+        Kuhn Poker has 12 info sets, so we maintain 12 separate cumulative regret vectors and
+        12 strategy vectors. A real poker solver might have billions — but the principle is identical.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="cfr-algorithm"><span class="section-num">5.</span> The CFR Algorithm</h2>
+
+    <p>
+        CFR was introduced by Zinkevich et al. (2007). The core idea is elegantly simple:
+    </p>
+
+    <div class="callout theorem">
+        <div class="callout-title">Algorithm: Vanilla CFR</div>
+        <strong>Initialize:</strong> For each information set <span class="math-inline">I</span>,
+        set <span class="math-inline">R(I, a) = 0</span> for all actions <span class="math-inline">a</span>.
+        <br><br>
+        <strong>For each iteration t = 1, 2, 3, ...:</strong>
+        <ol style="margin-top: 10px;">
+            <li>For each possible deal of cards:</li>
+            <li style="list-style: none; padding-left: 20px;">
+                a. <strong>Traverse</strong> the game tree recursively<br>
+                b. At each info set, compute the <strong>current strategy</strong> from regrets
+                   (exactly as in Chapter 1)<br>
+                c. Compute the <strong>counterfactual value</strong> of each action<br>
+                d. <strong>Update regrets</strong>:
+                <span class="math-inline">R(I, a) += π<sub>-i</sub>(h) · [v(I, a) - v(I)]</span><br>
+                e. <strong>Accumulate strategy</strong>:
+                <span class="math-inline">Σ(I, a) += π<sub>i</sub>(h) · σ(I, a)</span>
+            </li>
+        </ol>
+        <br>
+        <strong>Output:</strong> The <strong>average strategy</strong>
+        <span class="math-inline">σ̄(I, a) = Σ(I, a) / Σ<sub>a'</sub> Σ(I, a')</span>
+    </div>
+
+    <p>
+        If you strip away the terminology, CFR is doing the same thing as Chapter 1 at every
+        info set — accumulate regrets, derive strategy from positive regrets, report the average.
+        The new ingredient is the <strong>counterfactual value</strong> and
+        <strong>reach probabilities</strong>.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="counterfactual"><span class="section-num">6.</span> Counterfactual Values &amp; Reach Probabilities</h2>
+
+    <p>
+        In a game tree, we can't simply compute "EV of action Rock against opponent's strategy"
+        like we did in RPS. We need to account for the fact that reaching an information set
+        depends on both players' strategies and the chance node (card deal).
+    </p>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Reach Probability</div>
+        The <strong>reach probability</strong> <span class="math-inline">π(h)</span> of history
+        <span class="math-inline">h</span> is the product of all strategy probabilities along the
+        path to <span class="math-inline">h</span>:
+        <br><br>
+        <div class="math-block">
+            π(h) = π<sub>0</sub>(h) · π<sub>1</sub>(h) · π<sub>c</sub>(h)
+        </div>
+        where <span class="math-inline">π<sub>i</sub>(h)</span> is the product of player
+        <span class="math-inline">i</span>'s strategy probabilities on the path, and
+        <span class="math-inline">π<sub>c</sub>(h)</span> is the probability of the chance events
+        (card deal).
+        <br><br>
+        In Kuhn Poker, <span class="math-inline">π<sub>c</sub></span> = 1/6 for each deal
+        (we handle this by averaging over all deals).
+    </div>
+
+    <div class="callout definition">
+        <div class="callout-title">Definition: Counterfactual Value</div>
+        The <strong>counterfactual value</strong> of action <span class="math-inline">a</span> at
+        information set <span class="math-inline">I</span> for player <span class="math-inline">i</span>
+        is:
+        <br><br>
+        <div class="math-block">
+            v<sub>i</sub>(I, a) = Σ<sub>h∈I</sub> π<sub>-i</sub>(h) · [value of subtree from h when playing a]
+        </div>
+        The key: we weight by the <strong>opponent's</strong> reach probability
+        <span class="math-inline">π<sub>-i</sub>(h)</span>, not the player's own. This is the
+        "counterfactual" — we ask: <em>"what would have happened if I tried to reach this
+        information set?"</em>
+    </div>
+
+    <div class="callout warning">
+        <div class="callout-title">Why Counterfactual?</div>
+        Using the opponent's reach probability (instead of the full reach) is not an arbitrary choice.
+        It's what makes CFR work:
+        <br><br>
+        <strong>Theorem (Zinkevich et al., 2007):</strong> If each player's <em>counterfactual</em>
+        regret at every information set is minimized, then the player's overall regret in the full
+        game is also minimized. Formally:
+        <br><br>
+        <div class="math-block">
+            R<sup>T</sup> ≤ Σ<sub>I ∈ I<sub>i</sub></sub> R<sup>T,+</sup><sub>imm</sub>(I)
+        </div>
+        This decomposition is what allows CFR to minimize regret independently at each info set,
+        then combine the guarantees. Without counterfactual weighting, this decomposition breaks.
+    </div>
+
+    <h3>Worked Example</h3>
+    <p>
+        Consider Player 1 at info set <code>Q:</code> (holding Queen, opening action).
+        The opponent could have Jack or King, each equally likely. Suppose Player 2's current strategy
+        at <code>J:b</code> is [Fold=1.0, Call=0.0] and at <code>K:b</code> is [Fold=0.0, Call=1.0].
+    </p>
+    <p>
+        If Player 1 <strong>bets</strong>:
+    </p>
+    <ul>
+        <li>vs Jack: P2 folds → P1 wins 1 chip</li>
+        <li>vs King: P2 calls → showdown, P1 loses 2 chips</li>
+    </ul>
+    <p>
+        Counterfactual value of betting = <span class="math-inline">1 · (+1) + 1 · (−2) = −1</span>
+        <br>
+        (Both opponents have reach probability 1 since no player actions precede this node.)
+    </p>
+    <p>
+        If Player 1 <strong>checks</strong>, the game continues to Player 2's info set
+        (<code>J:c</code> or <code>K:c</code>), and the value depends on Player 2's check/bet strategy there.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="implementation"><span class="section-num">7.</span> Implementation Walkthrough</h2>
+
+    <p>
+        The entire CFR algorithm for Kuhn Poker fits in a single recursive function.
+        Let's walk through the key pieces.
+    </p>
+
+    <h3>Data Structures</h3>
+    <p>
+        We need just two dictionaries, mapping each info set to an array of size 2 (one per action):
+    </p>
+    <pre><code><span class="comment"># Per info set: cumulative regrets and strategy sums</span>
+cumulative_regret = {}   <span class="comment"># info_set -> [regret_pass, regret_bet]</span>
+strategy_sum = {}        <span class="comment"># info_set -> [sum_pass, sum_bet]</span></code></pre>
+
+    <h3>Get Strategy (Same as Chapter 1)</h3>
+    <pre><code><span class="keyword">def</span> get_strategy(info_set):
+    <span class="comment"># Identical to Chapter 1 — normalize positive regrets</span>
+    regret = cumulative_regret[info_set]
+    positive = np.maximum(regret, <span class="number">0</span>)
+    total = positive.sum()
+    <span class="keyword">if</span> total > <span class="number">0</span>:
+        <span class="keyword">return</span> positive / total
+    <span class="keyword">return</span> np.array([<span class="number">0.5</span>, <span class="number">0.5</span>])  <span class="comment"># uniform if no positive regrets</span></code></pre>
+
+    <h3>The CFR Traversal</h3>
+    <pre><code><span class="keyword">def</span> cfr(cards, history, reach_0, reach_1):
+    <span class="comment"># Base case: terminal node</span>
+    <span class="keyword">if</span> is_terminal(history):
+        <span class="keyword">return</span> terminal_payoff(cards, history)  <span class="comment"># from P0's perspective</span>
+
+    player = len(history) % <span class="number">2</span>
+    info_set = cards[player] + <span class="string">":"</span> + history
+    strategy = get_strategy(info_set)
+
+    <span class="comment"># Recurse into each action</span>
+    action_values = [<span class="number">0.0</span>, <span class="number">0.0</span>]
+    node_value = <span class="number">0.0</span>
+    <span class="keyword">for</span> action <span class="keyword">in</span> [<span class="number">0</span>, <span class="number">1</span>]:  <span class="comment"># 0=pass, 1=bet</span>
+        <span class="keyword">if</span> player == <span class="number">0</span>:
+            action_values[action] = cfr(cards, history + action_char,
+                                        reach_0 * strategy[action], reach_1)
+        <span class="keyword">else</span>:
+            action_values[action] = cfr(cards, history + action_char,
+                                        reach_0, reach_1 * strategy[action])
+        node_value += strategy[action] * action_values[action]
+
+    <span class="comment"># Update regrets (weighted by OPPONENT's reach)</span>
+    opponent_reach = reach_1 <span class="keyword">if</span> player == <span class="number">0</span> <span class="keyword">else</span> reach_0
+    <span class="keyword">for</span> action <span class="keyword">in</span> [<span class="number">0</span>, <span class="number">1</span>]:
+        regret = action_values[action] - node_value
+        <span class="keyword">if</span> player == <span class="number">1</span>:
+            regret = -regret  <span class="comment"># P1 values are negated (zero-sum)</span>
+        cumulative_regret[info_set][action] += opponent_reach * regret
+
+    <span class="comment"># Accumulate strategy (weighted by OWN reach)</span>
+    my_reach = reach_0 <span class="keyword">if</span> player == <span class="number">0</span> <span class="keyword">else</span> reach_1
+    strategy_sum[info_set] += my_reach * strategy
+
+    <span class="keyword">return</span> node_value</code></pre>
+
+    <div class="callout warning">
+        <div class="callout-title">Critical: Reach Probability Weighting</div>
+        Notice the asymmetry in the weights:
+        <ul style="margin-top: 8px;">
+            <li><strong>Regrets</strong> are weighted by <span class="math-inline">π<sub>-i</sub></span>
+                (opponent's reach) — this is the counterfactual part</li>
+            <li><strong>Strategy sums</strong> are weighted by <span class="math-inline">π<sub>i</sub></span>
+                (own reach) — this gives the correct average strategy</li>
+        </ul>
+        Getting these weights backwards is a common implementation bug.
+    </div>
+
+    <h3>Training Loop</h3>
+    <pre><code><span class="keyword">for</span> iteration <span class="keyword">in</span> range(num_iterations):
+    <span class="comment"># Traverse tree for every possible deal</span>
+    <span class="keyword">for</span> p0_card <span class="keyword">in</span> [J, Q, K]:
+        <span class="keyword">for</span> p1_card <span class="keyword">in</span> [J, Q, K]:
+            <span class="keyword">if</span> p0_card != p1_card:
+                cfr([p0_card, p1_card], <span class="string">""</span>, <span class="number">1.0</span>, <span class="number">1.0</span>)</code></pre>
+
+    <p>
+        Each iteration traverses the full tree for all 6 possible deals. This is <strong>vanilla CFR</strong>
+        — no sampling. For larger games, Monte Carlo CFR (MCCFR) samples deals instead of enumerating them,
+        trading variance for speed.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="nash"><span class="section-num">8.</span> The Nash Equilibrium of Kuhn Poker</h2>
+
+    <p>
+        Unlike RPS (which has a unique Nash Equilibrium), Kuhn Poker has a <strong>family of equilibria</strong>
+        parameterized by a single value <span class="math-inline">α ∈ [0, 1/3]</span>.
+    </p>
+
+    <div class="callout theorem">
+        <div class="callout-title">Theorem: Kuhn Poker Nash Equilibrium</div>
+        <strong>Player 1:</strong>
+        <table style="margin: 12px 0; font-size: 14px;">
+            <tr><th>Info Set</th><th>Strategy</th><th>Meaning</th></tr>
+            <tr><td><code>K:</code></td><td>Bet with prob 3α</td><td>Value bet</td></tr>
+            <tr><td><code>Q:</code></td><td>Always check</td><td>Marginal hand</td></tr>
+            <tr><td><code>J:</code></td><td>Bet with prob α</td><td>Bluff</td></tr>
+            <tr><td><code>K:cb</code></td><td>Always call</td><td>Nuts</td></tr>
+            <tr><td><code>Q:cb</code></td><td>Call with prob ⅓ + α</td><td>Bluff-catch</td></tr>
+            <tr><td><code>J:cb</code></td><td>Always fold</td><td>Air</td></tr>
+        </table>
+        <strong>Player 2:</strong> (independent of α)
+        <table style="margin: 12px 0; font-size: 14px;">
+            <tr><th>Info Set</th><th>Strategy</th><th>Meaning</th></tr>
+            <tr><td><code>K:c</code></td><td>Always bet</td><td>Value bet</td></tr>
+            <tr><td><code>Q:c</code></td><td>Always check</td><td>Showdown value</td></tr>
+            <tr><td><code>J:c</code></td><td>Bet with prob ⅓</td><td>Bluff</td></tr>
+            <tr><td><code>K:b</code></td><td>Always call</td><td>Nuts</td></tr>
+            <tr><td><code>Q:b</code></td><td>Call with prob ⅓</td><td>Bluff-catch</td></tr>
+            <tr><td><code>J:b</code></td><td>Always fold</td><td>Air</td></tr>
+        </table>
+        <strong>Game value:</strong> −1/18 ≈ −0.0556 per hand for Player 1.
+        <br>Player 2 has a positional advantage: acting second is worth ~5.6% of the ante.
+    </div>
+
+    <p>
+        All values of α give the same game value. CFR may converge to any equilibrium in this family.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="poker-concepts"><span class="section-num">9.</span> Poker Concepts in Miniature</h2>
+
+    <p>
+        The Kuhn Poker equilibrium is a microcosm of real poker strategy. Let's unpack the key concepts.
+    </p>
+
+    <h3>9.1 Bluffing</h3>
+    <p>
+        Player 1 bets with Jack (the worst hand) with probability α. This is a <strong>pure bluff</strong>
+        — the only way to win with Jack is to make the opponent fold. But why does the equilibrium
+        include bluffing at all?
+    </p>
+    <p>
+        If Player 1 never bluffed, Player 2 would know every bet means King and would always fold.
+        Then Player 1 would never get value from Kings. By bluffing sometimes with Jack, Player 1
+        forces Player 2 to call sometimes, which extracts value from King bets.
+    </p>
+
+    <h3>9.2 The Bluff-to-Value Ratio</h3>
+    <p>
+        Notice: P1 bluffs with probability α and value bets with probability 3α. The ratio is
+        <strong>1:3 (bluff : value)</strong>. This is not arbitrary — it's calibrated to make Player 2
+        <em>indifferent</em> to calling with Queen.
+    </p>
+    <p>
+        When facing a bet, Player 2 with Queen risks 1 chip to win a pot of 3 chips (the 2 antes + 1 bet).
+        The pot odds are 3:1, so Player 2 needs the bet to be a bluff at least 1/4 of the time. With
+        P1 bluffing α and value betting 3α, the bluff frequency is
+        <span class="math-inline">α / (α + 3α) = 1/4</span> — exactly the pot odds.
+    </p>
+
+    <div class="callout insight">
+        <div class="callout-title">Universal Poker Principle</div>
+        In equilibrium, the bluff-to-value-bet ratio is determined by the pot odds the opponent is getting.
+        This principle scales directly to real poker:
+        a player betting into a pot of P with a bet of B should bluff at a frequency of
+        <span class="math-inline">B / (P + 2B)</span> to make the opponent indifferent to calling.
+    </div>
+
+    <h3>9.3 Position</h3>
+    <p>
+        The game value is −1/18 for Player 1. Acting <em>first</em> is a disadvantage in Kuhn Poker
+        (and in most poker variants). Player 2 gets to see Player 1's action before deciding,
+        which provides valuable information.
+    </p>
+    <p>
+        This mirrors real poker: the button (last to act post-flop) has a significant strategic advantage.
+        In the solver output, you'll see this reflected in the asymmetric equilibrium strategies.
+    </p>
+
+    <h3>9.4 Indifference</h3>
+    <p>
+        At Nash Equilibrium, Player 2 with Queen is <em>indifferent</em> to calling or folding when facing
+        a bet — both actions give the same expected value. Similarly, Player 1's bluff and value bet
+        frequencies are set to make Player 2 indifferent. This is a defining property of mixed-strategy
+        Nash Equilibria: you mix between actions only when they're equally good.
+    </p>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-cfr"><span class="section-num">10.</span> Interactive Demo: CFR Training</h2>
+
+    <p>
+        Watch CFR learn the Nash Equilibrium of Kuhn Poker in real time. The chart shows
+        exploitability dropping toward zero as strategies converge.
+    </p>
+
+    <div class="demo-container" role="region" aria-label="CFR training simulation">
+        <h4>CFR Training on Kuhn Poker</h4>
+
+        <div class="slider-row">
+            <label for="cfr-iterations">Iterations:</label>
+            <input type="range" id="cfr-iterations" min="100" max="50000" value="10000" step="100">
+            <span class="val" id="cfr-iter-val">10000</span>
+        </div>
+
+        <button id="run-cfr-btn" onclick="runCFRDemo()">Train CFR</button>
+
+        <canvas id="cfr-chart" height="280" role="img" aria-label="Chart showing exploitability convergence over CFR iterations"></canvas>
+
+        <div class="readout" id="cfr-readout">
+            Press "Train CFR" to run the simulation.
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="demo-equilibrium"><span class="section-num">11.</span> Interactive Demo: Equilibrium Explorer</h2>
+
+    <p>
+        Explore how the strategies at each information set change as CFR converges.
+        Run the training first, then inspect each info set.
+    </p>
+
+    <div class="demo-container" role="region" aria-label="Equilibrium strategy explorer">
+        <h4>Learned Strategies at Each Information Set</h4>
+
+        <div id="strategy-display">
+            <p style="font-size: 14px; color: var(--text-muted); font-family: sans-serif;">
+                Run CFR training above first, then strategies will appear here.
+            </p>
+        </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="bridge"><span class="section-num">12.</span> Bridge to Larger Games</h2>
+
+    <p>
+        Kuhn Poker has 12 information sets. Real poker has billions. How does CFR scale?
+    </p>
+
+    <h3>12.1 Monte Carlo CFR (MCCFR)</h3>
+    <p>
+        Vanilla CFR traverses the <em>entire</em> tree every iteration. In NLHE, this is impossible.
+        <strong>MCCFR</strong> samples random deals and traverses only those branches, giving unbiased
+        regret estimates with much less work per iteration.
+    </p>
+
+    <h3>12.2 CFR+</h3>
+    <p>
+        Instead of allowing negative cumulative regrets (which slow convergence),
+        <strong>CFR+</strong> floors regrets at zero after each iteration. This was used to
+        essentially solve Heads-Up Limit Hold'em.
+    </p>
+
+    <h3>12.3 Abstraction</h3>
+    <p>
+        For NLHE, the game tree is too large even for MCCFR. <strong>Abstraction</strong> groups
+        similar hands into "buckets" (card abstraction) and limits the bet sizes
+        (action abstraction), reducing the tree to a tractable size. Chapter 4 will cover this.
+    </p>
+
+    <div class="callout insight">
+        <div class="callout-title">The Path to a Real Solver</div>
+        The CFR code you wrote for Kuhn Poker is structurally identical to a production poker solver.
+        The only differences are:
+        <ul style="margin-top: 8px;">
+            <li>Replace the 3-card deck with a 52-card deck</li>
+            <li>Replace the single betting round with multiple streets</li>
+            <li>Add card abstraction and action abstraction</li>
+            <li>Switch from full traversal to Monte Carlo sampling</li>
+            <li>Add engineering: compression, parallelism, disk-backed storage</li>
+        </ul>
+        The regret-matching core at each info set? Exactly the same.
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <h2 id="references"><span class="section-num">13.</span> References</h2>
+
+    <div class="citation">
+        <span class="authors">Kuhn, H.</span> (1950).
+        <span class="title">Simplified two-person poker.</span>
+        Contributions to the Theory of Games, 1, 97–103.
+        <br>The original definition of the game studied in this chapter.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Zinkevich, M., Johanson, M., Bowling, M., &amp; Piccione, C.</span> (2007).
+        <span class="title">Regret minimization in games with incomplete information.</span>
+        Advances in Neural Information Processing Systems (NeurIPS), 20, 1729–1736.
+        <br>The foundational CFR paper. Introduced the counterfactual regret decomposition that makes CFR possible.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Tammelin, O., Burch, N., Johanson, M., &amp; Bowling, M.</span> (2015).
+        <span class="title">Solving heads-up limit Texas hold'em.</span>
+        Science, 347(6218), 145–149.
+        <br>CFR+ was used to essentially solve Heads-Up Limit Hold'em with 3.19 × 10<sup>14</sup> information sets.
+    </div>
+
+    <div class="citation">
+        <span class="authors">Lanctot, M., Waugh, K., Zinkevich, M., &amp; Bowling, M.</span> (2009).
+        <span class="title">Monte Carlo sampling for regret minimization in extensive games.</span>
+        Advances in Neural Information Processing Systems (NeurIPS), 22.
+        <br>Introduced MCCFR — the sampling-based variant that makes CFR tractable for large games.
+    </div>
+
+</div>
+
+</main>
+
+<footer>
+    <p>
+        <a href="01-regret-matching.html">&larr; Chapter 1: Regret Matching</a> &mdash;
+        <a href="../index.html">Home</a> &mdash;
+        Chapter 3: Leduc Poker (coming soon) &rarr;
+    </p>
+    <p style="margin-top: 8px;">
+        <a href="https://github.com/RexJensen/Solver_tutorial">GitHub Repository</a>
+    </p>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<!-- JavaScript: Kuhn Poker CFR Engine + Interactive Demos                 -->
+<!-- ══════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Kuhn Poker Constants ──
+const JACK = 0, QUEEN = 1, KING = 2;
+const CARD_NAMES = { 0: "J", 1: "Q", 2: "K" };
+const ALL_DEALS = [];
+for (let c0 = 0; c0 < 3; c0++)
+    for (let c1 = 0; c1 < 3; c1++)
+        if (c0 !== c1) ALL_DEALS.push([c0, c1]);
+
+// ── CFR State ──
+let cumulativeRegret = {};
+let strategySum = {};
+
+function getOrCreate(obj, key) {
+    if (!(key in obj)) obj[key] = [0, 0];
+    return obj[key];
+}
+
+function getStrategy(infoSet) {
+    const reg = getOrCreate(cumulativeRegret, infoSet);
+    const pos = [Math.max(reg[0], 0), Math.max(reg[1], 0)];
+    const total = pos[0] + pos[1];
+    if (total > 0) return [pos[0] / total, pos[1] / total];
+    return [0.5, 0.5];
+}
+
+function getAverageStrategy(infoSet) {
+    const s = getOrCreate(strategySum, infoSet);
+    const total = s[0] + s[1];
+    if (total > 0) return [s[0] / total, s[1] / total];
+    return [0.5, 0.5];
+}
+
+function terminalValue(cards, history) {
+    if (history === "cc") return cards[0] > cards[1] ? 1 : -1;
+    if (history === "bc") return 1;
+    if (history === "bb") return cards[0] > cards[1] ? 2 : -2;
+    if (history === "cbc") return -1;
+    if (history === "cbb") return cards[0] > cards[1] ? 2 : -2;
+    return null;
+}
+
+function cfr(cards, history, reach0, reach1) {
+    const tv = terminalValue(cards, history);
+    if (tv !== null) return tv;
+
+    const player = history.length % 2;
+    const infoSet = CARD_NAMES[cards[player]] + ":" + history;
+    const strategy = getStrategy(infoSet);
+
+    const actionValues = [0, 0];
+    let nodeValue = 0;
+    const actionChars = ['c', 'b'];
+
+    for (let a = 0; a < 2; a++) {
+        const nextHist = history + actionChars[a];
+        if (player === 0) {
+            actionValues[a] = cfr(cards, nextHist, reach0 * strategy[a], reach1);
+        } else {
+            actionValues[a] = cfr(cards, nextHist, reach0, reach1 * strategy[a]);
+        }
+        nodeValue += strategy[a] * actionValues[a];
+    }
+
+    const oppReach = player === 0 ? reach1 : reach0;
+    const myReach = player === 0 ? reach0 : reach1;
+    const reg = getOrCreate(cumulativeRegret, infoSet);
+    const ssum = getOrCreate(strategySum, infoSet);
+
+    for (let a = 0; a < 2; a++) {
+        let regret = actionValues[a] - nodeValue;
+        if (player === 1) regret = -regret;
+        reg[a] += oppReach * regret;
+    }
+
+    ssum[0] += myReach * strategy[0];
+    ssum[1] += myReach * strategy[1];
+
+    return nodeValue;
+}
+
+function computeExploitability() {
+    const brVal0 = computeBRValue(0);
+    const brVal1 = computeBRValue(1);
+    return Math.max(0, (brVal0 + brVal1) / 2);
+}
+
+function computeBRValue(brPlayer) {
+    // Compute BR strategy bottom-up
+    const infoSetsByDepth = {};
+    for (const key of Object.keys(strategySum)) {
+        const histLen = key.length - 2;
+        const player = histLen % 2;
+        if (player === brPlayer) {
+            if (!(histLen in infoSetsByDepth)) infoSetsByDepth[histLen] = [];
+            infoSetsByDepth[histLen].push(key);
+        }
+    }
+
+    const brStrategy = {};
+    const depths = Object.keys(infoSetsByDepth).map(Number).sort((a, b) => b - a);
+
+    for (const depth of depths) {
+        for (const infoSet of infoSetsByDepth[depth]) {
+            const cardName = infoSet[0];
+            const cardIdx = { "J": 0, "Q": 1, "K": 2 }[cardName];
+            const history = infoSet.substring(2);
+            const actionEvs = [0, 0];
+
+            for (const cards of ALL_DEALS) {
+                if (cards[brPlayer] !== cardIdx) continue;
+                for (let a = 0; a < 2; a++) {
+                    const actionChar = a === 0 ? 'c' : 'b';
+                    actionEvs[a] += evalTree(cards, history + actionChar, brPlayer, brStrategy);
+                }
+            }
+
+            const best = actionEvs[1] > actionEvs[0] ? 1 : 0;
+            brStrategy[infoSet] = best === 0 ? [1, 0] : [0, 1];
+        }
+    }
+
+    let total = 0;
+    for (const cards of ALL_DEALS) {
+        total += evalTree(cards, "", brPlayer, brStrategy);
+    }
+    return total / ALL_DEALS.length;
+}
+
+function evalTree(cards, history, brPlayer, brStrategy) {
+    const tv = terminalValue(cards, history);
+    if (tv !== null) return brPlayer === 0 ? tv : -tv;
+
+    const acting = history.length % 2;
+    const infoSet = CARD_NAMES[cards[acting]] + ":" + history;
+
+    let strategy;
+    if (acting === brPlayer) {
+        strategy = brStrategy[infoSet] || [0.5, 0.5];
+    } else {
+        strategy = getAverageStrategy(infoSet);
+    }
+
+    let value = 0;
+    const actionChars = ['c', 'b'];
+    for (let a = 0; a < 2; a++) {
+        value += strategy[a] * evalTree(cards, history + actionChars[a], brPlayer, brStrategy);
+    }
+    return value;
+}
+
+// ── Chart Drawing ──
+function drawChart(canvasId, data, options) {
+    const canvas = document.getElementById(canvasId);
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.width = canvas.clientWidth * dpr;
+    canvas.height = canvas.clientHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    const pad = { top: 30, right: 20, bottom: 40, left: 60 };
+    const plotW = W - pad.left - pad.right;
+    const plotH = H - pad.top - pad.bottom;
+
+    ctx.fillStyle = "#141620";
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.strokeStyle = "#2a2f3e";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, pad.top);
+    ctx.lineTo(pad.left, pad.top + plotH);
+    ctx.lineTo(pad.left + plotW, pad.top + plotH);
+    ctx.stroke();
+
+    ctx.fillStyle = "#8a8fa8";
+    ctx.font = "12px sans-serif";
+    ctx.textAlign = "right";
+    const yTicks = options.yTicks || [0, 0.25, 0.5, 0.75, 1.0];
+    const yMin = options.yMin ?? 0;
+    const yMax = options.yMax ?? 1;
+    for (const tick of yTicks) {
+        const y = pad.top + plotH - ((tick - yMin) / (yMax - yMin)) * plotH;
+        ctx.fillText(tick.toFixed(2), pad.left - 8, y + 4);
+        ctx.strokeStyle = "#1e2231";
+        ctx.beginPath();
+        ctx.moveTo(pad.left, y);
+        ctx.lineTo(pad.left + plotW, y);
+        ctx.stroke();
+    }
+
+    ctx.fillStyle = "#8a8fa8";
+    ctx.textAlign = "center";
+    ctx.fillText("Iteration", W / 2, H - 4);
+
+    ctx.save();
+    ctx.translate(14, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(options.yLabel || "", 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = "#e0e0e8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText(options.title || "", pad.left, 18);
+
+    for (const series of data) {
+        ctx.strokeStyle = series.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < series.points.length; i++) {
+            const pt = series.points[i];
+            const x = pad.left + (pt.x / options.xMax) * plotW;
+            const y = pad.top + plotH - ((pt.y - yMin) / (yMax - yMin)) * plotH;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        const last = series.points[series.points.length - 1];
+        const lx = pad.left + (last.x / options.xMax) * plotW;
+        const ly = pad.top + plotH - ((last.y - yMin) / (yMax - yMin)) * plotH;
+        ctx.fillStyle = series.color;
+        ctx.font = "11px sans-serif";
+        ctx.textAlign = "left";
+        ctx.fillText(series.label, lx + 4, ly + 3);
+    }
+}
+
+// ── Strategy Bar Display ──
+function updateStratBar(barEl, strategy) {
+    barEl.innerHTML = "";
+    const names = ["Pass", "Bet"];
+    const classes = ["strat-pass", "strat-bet"];
+    for (let i = 0; i < 2; i++) {
+        const pct = strategy[i] * 100;
+        const div = document.createElement("div");
+        div.className = classes[i];
+        div.style.width = pct + "%";
+        if (pct > 12) {
+            div.textContent = names[i] + " " + Math.round(pct) + "%";
+        }
+        barEl.appendChild(div);
+    }
+}
+
+// ── CFR Demo ──
+function runCFRDemo() {
+    const numIter = parseInt(document.getElementById("cfr-iterations").value);
+
+    // Reset state
+    cumulativeRegret = {};
+    strategySum = {};
+
+    const exploitData = [];
+    const sampleInterval = Math.max(1, Math.floor(numIter / 200));
+
+    for (let t = 0; t < numIter; t++) {
+        for (const cards of ALL_DEALS) {
+            cfr(cards, "", 1.0, 1.0);
+        }
+
+        if (t % sampleInterval === 0 || t === numIter - 1) {
+            const expl = computeExploitability();
+            exploitData.push({ x: t, y: expl });
+        }
+    }
+
+    // Draw exploitability chart
+    drawChart("cfr-chart", [
+        { label: "Exploitability", points: exploitData, color: "#f87171" },
+    ], {
+        title: "Exploitability Over CFR Iterations",
+        xMax: numIter,
+        yMin: 0,
+        yMax: Math.max(0.5, exploitData[0]?.y || 0.5),
+        yTicks: [0, 0.05, 0.1, 0.2, 0.3, 0.5],
+        yLabel: "Exploitability"
+    });
+
+    // Update readout
+    const finalExploit = exploitData[exploitData.length - 1].y;
+    let readoutHtml = `<span class="label">After ${numIter.toLocaleString()} iterations:</span><br>`;
+    readoutHtml += `Exploitability: <span class="val-green">${finalExploit.toFixed(6)}</span><br><br>`;
+
+    document.getElementById("cfr-readout").innerHTML = readoutHtml;
+
+    // Update strategy display
+    displayStrategies();
+}
+
+function displayStrategies() {
+    const container = document.getElementById("strategy-display");
+    let html = "";
+
+    // Known Nash equilibrium descriptions
+    const nashDesc = {
+        "J:": "Bluff with prob α",
+        "Q:": "Always check",
+        "K:": "Value bet with prob 3α",
+        "J:cb": "Always fold",
+        "Q:cb": "Call with prob ⅓+α",
+        "K:cb": "Always call",
+        "J:c": "Bluff with prob ⅓",
+        "Q:c": "Always check",
+        "K:c": "Always bet",
+        "J:b": "Always fold",
+        "Q:b": "Call with prob ⅓",
+        "K:b": "Always call",
+    };
+
+    for (const [player, label] of [[0, "Player 1 (first to act)"], [1, "Player 2"]]) {
+        html += `<div style="margin-top: 16px; font-family: sans-serif; font-size: 14px; font-weight: bold; color: #fff;">${label}</div>`;
+
+        const infoSets = Object.keys(strategySum)
+            .filter(k => (k.length - 2) % 2 === player)
+            .sort();
+
+        for (const infoSet of infoSets) {
+            const avg = getAverageStrategy(infoSet);
+            const desc = nashDesc[infoSet] || "";
+
+            html += `<div style="margin: 8px 0;">`;
+            html += `<div style="display: flex; justify-content: space-between; font-family: 'Courier New', monospace; font-size: 13px; color: var(--text-muted);">`;
+            html += `<span style="color: var(--accent);">${infoSet}</span>`;
+            html += `<span>Nash: ${desc}</span>`;
+            html += `</div>`;
+            html += `<div class="strat-bar" id="bar-${infoSet.replace(':', '-')}">`;
+            const passPct = avg[0] * 100;
+            const betPct = avg[1] * 100;
+            html += `<div class="strat-pass" style="width: ${passPct}%">${passPct > 12 ? 'Pass ' + Math.round(passPct) + '%' : ''}</div>`;
+            html += `<div class="strat-bet" style="width: ${betPct}%">${betPct > 12 ? 'Bet ' + Math.round(betPct) + '%' : ''}</div>`;
+            html += `</div></div>`;
+        }
+    }
+
+    container.innerHTML = html;
+}
+
+// ── Slider Updates ──
+document.getElementById("cfr-iterations").oninput = function() {
+    document.getElementById("cfr-iter-val").textContent = this.value;
+};
+</script>
+
+</body>
+</html>
